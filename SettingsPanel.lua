@@ -9,7 +9,7 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
 local IsAddOnLoaded = C_AddOns and C_AddOns.IsAddOnLoaded or _G.IsAddOnLoaded
-local GetNumAddOns =  C_AddOns and C_AddOns.GetNumAddOns or _G.GetNumAddOns
+local GetNumAddOns = C_AddOns and C_AddOns.GetNumAddOns or _G.GetNumAddOns
 local GetAddOnInfo = C_AddOns and C_AddOns.GetAddOnInfo or _G.GetAddOnInfo
 
 local GetItemInfo = C_Item and C_Item.GetItemInfo or _G.GetItemInfo
@@ -209,11 +209,14 @@ local settingsDBDefaults = {
 function addon.settings:InitializeSettings()
     -- New character settings format
     -- Only set defaults for enabled = true
-    if type(RXPData.defaultProfile) ~= "table" or not RXPData.defaultProfile.profile then
+    if type(RXPData.defaultProfile) ~= "table" or
+        not RXPData.defaultProfile.profile then
         RXPData.defaultProfile = false
     end
 
-    settingsDB = LibStub("AceDB-3.0"):New("RXPSettings", RXPData.defaultProfile or settingsDBDefaults)
+    settingsDB = LibStub("AceDB-3.0"):New("RXPSettings",
+                                          RXPData.defaultProfile or
+                                              settingsDBDefaults)
 
     settingsDB.RegisterCallback(self, "OnProfileChanged", "RefreshProfile")
     settingsDB.RegisterCallback(self, "OnProfileCopied", "CopyProfile")
@@ -273,7 +276,6 @@ function addon.settings:MigrateLegacySettings()
         db.showUnusedGuides = not RXPData.hideUnusedGuides
         RXPData.hideUnusedGuides = nil
     end
-
 
     if RXPCData.disableArrow ~= nil then
         n("disableArrow", RXPCData.disableArrow)
@@ -436,7 +438,8 @@ function addon.settings.GetImportedGuides()
     local importedGuidesFound = false
 
     for _, guide in pairs(addon.guides) do
-        if (guide.imported or guide.cache) and (guide.group ~= "RXPGuides" or addon.settings.profile.debug) then
+        if (guide.imported or guide.cache) and
+            (guide.group ~= "RXPGuides" or addon.settings.profile.debug) then
             importedGuidesFound = true
             local group, subgroup, name = guide.key:match("^(.*)|(.*)|(.*)")
             if subgroup ~= "" then group = group .. "/" .. subgroup end
@@ -572,7 +575,7 @@ function addon.settings:CreateImportOptionsPanel()
                 --[[disabled = function()
                     return next(addon.db.profile.guides) == nil
                 end,]]
-                --Let people purge the data even without any installed guides in case they experience caching issues
+                -- Let people purge the data even without any installed guides in case they experience caching issues
                 func = function()
                     addon.db.profile.guides = {}
                     addon:CreateMetaDataTable(true)
@@ -755,7 +758,7 @@ function addon.settings:CreateAceOptionsPanel()
             return first
         end
 
-        local features = fmt('%s\n\n%s:', first , _G.FEATURES_LABEL)
+        local features = fmt('%s\n\n%s:', first, _G.FEATURES_LABEL)
 
         for feature, desc in pairs(addon.settings.enabledBetaFeatures) do
             features = fmt('%s\n%s\n - %s', features, feature, desc)
@@ -1017,58 +1020,57 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "header",
                         width = "full",
                         order = 4.8,
-                        hidden = not addon.inventoryManager,
+                        hidden = not addon.inventoryManager
                     },
                     showJunkIcon = {
                         name = L("Show junk item indicator"), -- TODO locale
-                        desc = L("Any items marked as junk will display a gold coin icon on the top left corner of the item icon within your bags"),
+                        desc = L(
+                            "Any items marked as junk will display a gold coin icon on the top left corner of the item icon within your bags"),
                         type = "toggle",
                         width = optionsWidth * 1.5,
                         order = 4.81,
-                        hidden = not addon.inventoryManager,
+                        hidden = not addon.inventoryManager
                     },
                     autoDiscardItems = {
                         name = L("Discard junk items if bag is full"), -- TODO locale
-                        desc = L("Automatically attempts to discard the cheapest junk item from your bags if your inventory is full"),
+                        desc = L(
+                            "Automatically attempts to discard the cheapest junk item from your bags if your inventory is full"),
                         type = "toggle",
                         width = optionsWidth * 1.5,
                         order = 4.83,
-                        hidden = not addon.inventoryManager,
+                        hidden = not addon.inventoryManager
                     },
                     rightClickJunk = {
                         name = L("Toggle junk with modified right click"), -- TODO locale
-                        desc = L("Allows you to toggle items as junk by clicking on it with CTRL+RightClick or ALT+RightClick"),
+                        desc = L(
+                            "Allows you to toggle items as junk by clicking on it with CTRL+RightClick or ALT+RightClick"),
                         type = "toggle",
                         width = optionsWidth * 1.5,
                         order = 4.84,
-                        hidden = not addon.inventoryManager,
+                        hidden = not addon.inventoryManager
                     },
                     rightClickMod = {
                         name = L("Right Click Modifier"), -- TODO locale
                         type = "select",
-                        width = optionsWidth*0.6,
+                        width = optionsWidth * 0.6,
                         order = 4.85,
                         get = function()
-                            return
-                                self.profile.rightClickMod or 1
+                            return self.profile.rightClickMod or 1
                         end,
-                        disabled = function ()
+                        disabled = function()
                             return not self.profile.rightClickJunk
                         end,
-                        values = {
-                            [1] = "CTRL",
-                            [2] = "ALT",
-                            [3] = "CTRL+ALT",
-                        },
-                        hidden = not addon.inventoryManager,
+                        values = {[1] = "CTRL", [2] = "ALT", [3] = "CTRL+ALT"},
+                        hidden = not addon.inventoryManager
                     },
                     autoSellJunk = {
                         name = L("Auto Sell Junk"), -- TODO locale
-                        desc = L("Automatically sell all gray items and all other items that you set as junk"),
+                        desc = L(
+                            "Automatically sell all gray items and all other items that you set as junk"),
                         type = "toggle",
                         width = optionsWidth * 1.5,
                         order = 4.86,
-                        hidden = not addon.inventoryManager,
+                        hidden = not addon.inventoryManager
                     },
                     sellKeybind = {
                         name = L("Delete Cheapest Junk Item Keybind"), -- TODO locale
@@ -1078,16 +1080,18 @@ function addon.settings:CreateAceOptionsPanel()
                         order = 4.87,
                         hidden = not addon.inventoryManager,
                         get = function()
-                            local commandName = "CLICK RXPInventory_DeleteJunk:LeftButton"
+                            local commandName =
+                                "CLICK RXPInventory_DeleteJunk:LeftButton"
                             local i = addon.inventoryManager.bindingIndex
-                            local c,_,key = GetBinding(i or 1)
+                            local c, _, key = GetBinding(i or 1)
                             if c == commandName then
                                 return key
                             else
                                 for index = 1, GetNumBindings() do
-                                    local command,_,key1 = GetBinding(index)
+                                    local command, _, key1 = GetBinding(index)
                                     if command == commandName then
-                                        addon.inventoryManager.bindingIndex = index
+                                        addon.inventoryManager.bindingIndex =
+                                            index
                                         return key1
                                     end
                                 end
@@ -1096,11 +1100,11 @@ function addon.settings:CreateAceOptionsPanel()
                         set = function(info, key)
                             local i = addon.inventoryManager.bindingIndex
                             local c = "CLICK RXPInventory_DeleteJunk:LeftButton"
-                            local command,_,key1 = GetBinding(i or 1)
+                            local command, _, key1 = GetBinding(i or 1)
                             if command == c and key1 then
                                 SetBinding(key1)
                             end
-                            SetBinding(key,c)
+                            SetBinding(key, c)
                         end
                     },
                     talentsHeader = {
@@ -1305,8 +1309,7 @@ function addon.settings:CreateAceOptionsPanel()
                     },
                     loremasterMode = {
                         name = L("Loremaster Mode"),
-                        desc = L(
-                            "Adjust the routes to include more quests"),
+                        desc = L("Adjust the routes to include more quests"),
                         type = "toggle",
                         width = optionsWidth,
                         order = 2.11,
@@ -1346,7 +1349,8 @@ function addon.settings:CreateAceOptionsPanel()
                             addon.ReloadGuide()
                             addon.RXPFrame.GenerateMenuTable()
                         end,
-                        hidden = addon.game ~= "CLASSIC" or addon.settings.profile.season == 2
+                        hidden = addon.game ~= "CLASSIC" or
+                            addon.settings.profile.season == 2
                     },
                     hardcore = {
                         name = L("Hardcore mode"),
@@ -1370,8 +1374,12 @@ function addon.settings:CreateAceOptionsPanel()
                         desc = L(
                             "Adjust the leveling routes to the current season"),
                         type = "select",
-                        values = {[false] = L"None", [1] = L"Season of Mastery", [2] = L"Season of Discovery"},
-                        --sorting = {0, 1, 2},
+                        values = {
+                            [false] = L "None",
+                            [1] = L "Season of Mastery",
+                            [2] = L "Season of Discovery"
+                        },
+                        -- sorting = {0, 1, 2},
                         width = optionsWidth,
                         order = 2.5,
                         set = function(info, value)
@@ -1386,7 +1394,8 @@ function addon.settings:CreateAceOptionsPanel()
                             local out =
                                 L "Routes in quests for the selected dungeon\nGuides that support this feature:\n"
                             for guide in pairs(
-                                             RXPCData.guideMetaData.dungeonGuides) do
+                                             RXPCData.guideMetaData
+                                                 .dungeonGuides) do
                                 out = fmt("%s\n%s", out, guide)
                             end
                             return out
@@ -2262,6 +2271,31 @@ function addon.settings:CreateAceOptionsPanel()
                             SetProfileOption(info, value)
                             addon.itemUpgrades.AH:Setup()
                         end
+                    },
+                    marketFlipsHeader = {
+                        name = L('Market Flips'),
+                        type = "header",
+                        width = "full",
+                        order = 6.0,
+                        hidden = function()
+                            return not addon.marketFlips or
+                                       not self.profile.enableBetaFeatures
+                        end
+                    },
+                    enableMarketFlips = {
+                        name = fmt("%s %s", _G.ENABLE, 'Market Flips'),
+                        -- desc = '',
+                        type = "toggle",
+                        width = optionsWidth,
+                        order = 6.1,
+                        hidden = function()
+                            return not addon.marketFlips or
+                                       not self.profile.enableBetaFeatures
+                        end,
+                        set = function(info, value)
+                            SetProfileOption(info, value)
+                            addon.marketFlips:Setup()
+                        end
                     }
                 }
             },
@@ -2910,8 +2944,9 @@ function addon.settings:CreateAceOptionsPanel()
                 args = {
                     enableBetaFeatures = {
                         name = L("Enable Beta Features"),
-                        desc = function ()
-                            return listBetaFeatures(L("Enables new features, forces reload to take effect"))
+                        desc = function()
+                            return listBetaFeatures(L(
+                                                        "Enables new features, forces reload to take effect"))
                         end,
                         type = "toggle",
                         width = optionsWidth,
@@ -3076,7 +3111,8 @@ function addon.settings:CreateAceOptionsPanel()
         type = 'execute',
         func = function() _G.ReloadUI() end,
         disabled = function()
-            return loadedProfileKey == settingsDB.keys.profile and not settingsDB.isResetting
+            return loadedProfileKey == settingsDB.keys.profile and
+                       not settingsDB.isResetting
         end
     }
 
@@ -3096,7 +3132,7 @@ function addon.settings:CreateAceOptionsPanel()
             addon.settings.defaultProfileKey = settingsDB:GetCurrentProfile()
             local function copy(t)
                 local out = {}
-                for i,v in pairs(t) do
+                for i, v in pairs(t) do
                     if type(v) == "table" then
                         out[i] = copy(v)
                     else
@@ -3108,7 +3144,8 @@ function addon.settings:CreateAceOptionsPanel()
             RXPData.defaultProfile = {profile = copy(addon.settings.profile)}
         end,
         disabled = function()
-            return addon.settings.defaultProfileKey == settingsDB:GetCurrentProfile()
+            return addon.settings.defaultProfileKey ==
+                       settingsDB:GetCurrentProfile()
         end
     }
 
@@ -3194,28 +3231,28 @@ local function CheckBuff(buffId)
     end
 end
 
-local ITEM_RANGE = ITEM_LEVEL_RANGE_CURRENT:gsub("([%(%)])","%%%1")
-ITEM_RANGE = ITEM_RANGE:gsub("%%d","%(%%d+%)")
+local ITEM_RANGE = ITEM_LEVEL_RANGE_CURRENT:gsub("([%(%)])", "%%%1")
+ITEM_RANGE = ITEM_RANGE:gsub("%%d", "%(%%d+%)")
 local XPTEXT = strlower(POWER_TYPE_EXPERIENCE)
 
 addon.settings.heirloomSlots = {}
 local tooltipTimer = 0
 local playerLevelCheck = 0
 
-function addon.GetXPBonuses(ignoreBuffs,playerLevel)
+function addon.GetXPBonuses(ignoreBuffs, playerLevel)
     local calculatedRate = not ignoreBuffs and CheckBuff(377749) and 1.5 or 1.0 -- Joyous Journeys
 
     local GetInventoryItemLink = GetInventoryItemLink
 
-    --Fast track guild perk
-    if addon.IsPlayerSpell(78632) then
-        calculatedRate = calculatedRate + 0.1
-    end
+    -- Fast track guild perk
+    if addon.IsPlayerSpell(78632) then calculatedRate = calculatedRate + 0.1 end
 
     if addon.game == "RETAIL" then
         local cloakBonus = C_CurrencyInfo.GetCurrencyInfo(3001).quantity
-        local warModeBonus = (C_PvP.IsWarModeActive() or CheckBuff(282559) or CheckBuff(269083) or CheckBuff(289954)) and C_PvP.GetWarModeRewardBonus() or 0
-        calculatedRate = calculatedRate + (cloakBonus + warModeBonus)/100
+        local warModeBonus = (C_PvP.IsWarModeActive() or CheckBuff(282559) or
+                                 CheckBuff(269083) or CheckBuff(289954)) and
+                                 C_PvP.GetWarModeRewardBonus() or 0
+        calculatedRate = calculatedRate + (cloakBonus + warModeBonus) / 100
         return calculatedRate
     elseif addon.game == "WOTLK" then
         local itemQuality
@@ -3228,7 +3265,8 @@ function addon.GetXPBonuses(ignoreBuffs,playerLevel)
                 calculatedRate = calculatedRate + 0.1
 
                 if addon.settings.profile.debug then
-                    addon.comms.PrettyPrint("Heirloom detected in Shoulder slot")
+                    addon.comms
+                        .PrettyPrint("Heirloom detected in Shoulder slot")
                 end
             end
         end
@@ -3247,7 +3285,7 @@ function addon.GetXPBonuses(ignoreBuffs,playerLevel)
             end
         end
     else
-        --Parses tooltips to figure out heirloom xp bonuses
+        -- Parses tooltips to figure out heirloom xp bonuses
         local tooltipShown
         local heirloomSlots = {}
         local lastScan = addon.settings.heirloomSlots
@@ -3257,34 +3295,34 @@ function addon.GetXPBonuses(ignoreBuffs,playerLevel)
             if itemLink then
                 itemQuality = select(3, GetItemInfo(itemLink))
             end
-            if itemQuality == INV_HEIRLOOM then
-                heirloomSlots[i] = 0
-            end
+            if itemQuality == INV_HEIRLOOM then heirloomSlots[i] = 0 end
         end
-        --Disable trinket parsing:
+        -- Disable trinket parsing:
         heirloomSlots[13] = nil
         heirloomSlots[14] = nil
         local currentLevel = UnitLevel('player')
         local t = GetTime()
         for i in pairs(heirloomSlots) do
-            if (not lastScan[i] or t - tooltipTimer > 30 or playerLevelCheck ~=  currentLevel) then
-                --print(i)
+            if (not lastScan[i] or t - tooltipTimer > 30 or playerLevelCheck ~=
+                currentLevel) then
+                -- print(i)
                 GameTooltip:SetOwner(addon.RXPFrame, "ANCHOR_RIGHT")
                 tooltipShown = true
-                local minilvl,maxilvl
-                GameTooltip:SetInventoryItem("player",i)
-                for n = 2,GameTooltip:NumLines() do
-                    local text = getglobal("GameTooltipTextLeft"..n):GetText() or ""
-                    --print(text)
+                local minilvl, maxilvl
+                GameTooltip:SetInventoryItem("player", i)
+                for n = 2, GameTooltip:NumLines() do
+                    local text =
+                        getglobal("GameTooltipTextLeft" .. n):GetText() or ""
+                    -- print(text)
                     if not (minilvl and maxilvl) then
-                        local tminlvl,tmaxlvl = text:match(ITEM_RANGE)
+                        local tminlvl, tmaxlvl = text:match(ITEM_RANGE)
                         minilvl = tonumber(tminlvl)
                         maxilvl = tonumber(tmaxlvl)
                     else
                         local lower = strlower(text)
                         local xp = lower:match("(%d%d?)%%")
                         if xp and lower:find(XPTEXT) then
-                            xp = tonumber(xp)/100
+                            xp = tonumber(xp) / 100
                             if maxilvl > (playerLevel or currentLevel) then
                                 heirloomSlots[i] = xp
                                 calculatedRate = calculatedRate + xp
@@ -3311,10 +3349,11 @@ function addon.settings:DetectXPRate(softUpdate)
     if not addon.settings.profile.enableAutomaticXpRate then
         return
     elseif addon.gameVersion < 20000 then
-        local season = (C_Seasons and C_Seasons.HasActiveSeason() and C_Seasons.GetActiveSeason()) or CheckBuff(362859) and 1
+        local season = (C_Seasons and C_Seasons.HasActiveSeason() and
+                           C_Seasons.GetActiveSeason()) or CheckBuff(362859) and
+                           1
 
         if season == addon.settings.profile.season then return end
-
 
         addon.settings.profile.season = season
 
@@ -3334,20 +3373,16 @@ function addon.settings:DetectXPRate(softUpdate)
 
     -- Bypass floating point comparison issues
     local increment = "%.2f"
-    if addon.game == "RETAIL" then
-        increment = "%.1f"
-    end
+    if addon.game == "RETAIL" then increment = "%.1f" end
 
-    if fmt(increment, addon.settings.profile.xprate) == fmt(increment, calculatedRate) then
-        return
-    end
+    if fmt(increment, addon.settings.profile.xprate) ==
+        fmt(increment, calculatedRate) then return end
 
     addon.settings.profile.xprate = calculatedRate
 
     -- Gold assistant, ignore reloads, silently update
-    if (RXPCData and RXPCData.GA) or (addon.guide and addon.guide.farm) or softUpdate then
-        return
-    end
+    if (RXPCData and RXPCData.GA) or (addon.guide and addon.guide.farm) or
+        softUpdate then return end
 
     addon.comms.PrettyPrint(L(
                                 "Experience rate change detected, reloading guide for %.2fx"),
@@ -3407,12 +3442,12 @@ function addon.settings:ResetProfile()
     addon.comms.PrettyPrint(L(
                                 "Profile changed, Reload UI for settings to take effect"))
 
-    --resets to the actual defaults, in case the profile is bricked or frames are offscreen
+    -- resets to the actual defaults, in case the profile is bricked or frames are offscreen
     settingsDBDefaults.profile.framePositions = {
-        arrowFrame = {{"TOP","UIParent","TOP",0,0}},
-        RXPFrame = {{"LEFT",nil,"LEFT",0,35}},
-        activeItemFrame = {{"CENTER","UIParent","CENTER",0,0}},
-        activeTargetFrame = {{"CENTER","UIParent","CENTER",0,-50}}
+        arrowFrame = {{"TOP", "UIParent", "TOP", 0, 0}},
+        RXPFrame = {{"LEFT", nil, "LEFT", 0, 35}},
+        activeItemFrame = {{"CENTER", "UIParent", "CENTER", 0, 0}},
+        activeTargetFrame = {{"CENTER", "UIParent", "CENTER", 0, -50}}
     }
     settingsDBDefaults.profile.frameSizes = {}
     settingsDBDefaults.profile.minimap.minimapPos = 146
@@ -3634,7 +3669,8 @@ function addon.settings:SetupMapButton()
                  self.worldMapButton, 0, 0, "MENU")
     end)
 
-    local ref = WorldMapFrame.MaximizeMinimizeFrame and WorldMapFrame.MaximizeMinimizeFrame.MaximizeButton
+    local ref = WorldMapFrame.MaximizeMinimizeFrame and
+                    WorldMapFrame.MaximizeMinimizeFrame.MaximizeButton
 
     local function recalculateMapButton()
         if WorldMapFrame.isMaximized then
@@ -3643,15 +3679,17 @@ function addon.settings:SetupMapButton()
                                          "TOPRIGHT", -10, -26)
         else
             self.worldMapButton:SetSize(20, 20)
-            self.worldMapButton:SetPoint("TOPRIGHT", ref or _G.WorldMapFrameCloseButton, "TOPLEFT", 0, -5.5)
+            self.worldMapButton:SetPoint("TOPRIGHT",
+                                         ref or _G.WorldMapFrameCloseButton,
+                                         "TOPLEFT", 0, -5.5)
         end
     end
 
     -- self.worldMapButton:SetScript("OnShow", recalculateMapButton)
     if ref then
         hooksecurefunc(ref, "Show", recalculateMapButton)
-        hooksecurefunc(WorldMapFrame.MaximizeMinimizeFrame.MinimizeButton, "Show",
-                    recalculateMapButton)
+        hooksecurefunc(WorldMapFrame.MaximizeMinimizeFrame.MinimizeButton,
+                       "Show", recalculateMapButton)
     end
 
 end
