@@ -31,6 +31,8 @@ Communications.lua
 Targeting.lua
 Tips.lua
 InventoryManager.lua
+AuctionHouse.lua
+MarketFlips.lua
 
 DB/wotlk.xml
 
