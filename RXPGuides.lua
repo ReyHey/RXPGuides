@@ -1060,6 +1060,12 @@ function addon:OnInitialize()
     if addon.itemUpgrades then
         addon.itemUpgrades:Setup()
     end
+    if addon.marketFlips then
+        addon.marketFlips:Setup()
+    end
+    if addon.auctionHouse then
+        addon.auctionHouse:Setup()
+    end
 
     if addon.player.season == 2 then
         addon.settings.profile.phase = 6
