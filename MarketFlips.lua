@@ -16,12 +16,15 @@ addon.marketFlips.functions = {}
 local session = {shoppingList = {}}
 
 function addon.marketFlips:Setup()
-    -- Toggle functionality off
     if not addon.settings.profile.enableMarketFlips or
         not addon.settings.profile.enableTips then return end
 
     if not addon.settings.profile.enableBetaFeatures then return end
 
+    -- Requires AH support
+    if not addon.auctionHouse then return end
+
+    addon.auctionHouse:Setup()
     session.shoppingList = {}
     RXPD = session
 end
