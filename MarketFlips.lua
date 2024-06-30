@@ -2,11 +2,12 @@ local addonName, addon = ...
 
 if addon.gameVersion > 20000 then return end
 
-local fmt, tinsert, ipairs, pairs, next, type, wipe, tonumber, strlower, sgmatch =
-    string.format, table.insert, ipairs, pairs, next, type, wipe, tonumber,
-    strlower, string.gmatch
+local fmt, tinsert, ipairs, pairs, next, type, wipe, tonumber, strlower,
+      sgmatch, tsort = string.format, table.insert, ipairs, pairs, next, type,
+                       wipe, tonumber, strlower, string.gmatch, table.sort
 
-local GetItemInfoInstant = C_Item.GetItemInfoInstant
+local GetItemInfo, GetItemInfoInstant = C_Item.GetItemInfo,
+                                        C_Item.GetItemInfoInstant
 
 local L = addon.locale.Get
 
@@ -26,18 +27,22 @@ function addon.marketFlips:Setup()
 
     addon.auctionHouse:Setup()
     session.shoppingList = {}
+    session.buyList = {}
     RXPD = session
 end
+
+local function isEmpty(list) return not list or next(list) == nil end
 
 function addon.marketFlips.LoadList(text)
     local list = addon.marketFlips:ParseList(text)
 
     -- Only mandatory field is .items, the rest are optional
 
-    if not list or not list.items or next(list.items) == nil then return end
+    if not list or isEmpty(list.items) then return end
 
     -- TODO if bad list imported, should the existing one be preserved?
     session.shoppingList = list
+    session.buyList = {}
 
     return list
 end
@@ -95,11 +100,18 @@ function addon.marketFlips:ParseList(text)
             end)
 
         end
+
+        if item.itemId then
+            -- Lookup itemLink now, for AH scanData comparisons
+            -- Ignore null lookups if server overloaded
+            item.name, item.itemLink = GetItemInfo(item.itemId)
+        end
     end
 
     list.displayName = list.displayName or
                            fmt('%s - %s', addonName, L('Shopping List'))
 
+    -- TODO validate each item has a parsed itemId
     -- TODO validate expansion
     -- TODO validate faction
     -- TODO validate realm
@@ -109,10 +121,10 @@ end
 function addon.marketFlips.functions.itemId(itemId)
     if type(itemId) == "string" then -- on parse
         local id = tonumber(itemId)
-        local lookup = GetItemInfoInstant(itemId)
-
+        local lookupId = GetItemInfoInstant(itemId)
+        -- print("itemId", id, itemId, lookupId, id == lookupId)
         -- Use this to check if itemId is valid
-        if id == lookup then return id end
+        return id == lookupId and id
     end
 
     return true
@@ -132,31 +144,99 @@ addon.marketFlips.functions.scannedPrice = addon.marketFlips.functions.number
 addon.marketFlips.functions.priceThreshold = addon.marketFlips.functions.number
 addon.marketFlips.functions.count = addon.marketFlips.functions.number
 
-function addon.marketFlips.scanCallback(data)
-    print("marketFlips scanCallback")
-    RXPD3 = data
+function addon.marketFlips:PurchaseShoppingList()
+    -- for _, name in session.buyList[item.name]
+end
 
-    -- TODO process scanData, looking for sequential increasing costs for items in current shopping list
+function addon.marketFlips.scanCallback(data)
+    -- scanData is itemLink ID, stemming from ItemUpgrades and randomized gear
+    -- Trade Goods are all static, so we use itemId
+    session.scanData = data
+
+    -- No shopping list so nothing to compare against
+    if not session.shoppingList then return end
+    -- [itemLink] = { count = 123, price = 23 }
+    session.buyList = {}
+
+    print("Checking", session.shoppingList.displayName,
+          "against latest scan data")
+    local foundCount, maxPrice, buyoutData, priceTable
+    for _, item in ipairs(session.shoppingList.items) do
+
+        -- First, make sure there's enough within range to satisfy order
+        foundCount = 0
+        maxPrice = addon.Round(item.scannedPrice * (item.priceThreshold or 1.2),
+                               0)
+
+        if not (item.name and item.itemLink) then
+            item.name, item.itemLink = GetItemInfo(item.itemId)
+        end
+        -- TODO handle if item.name lookup fails again
+        session.buyList[item.name] = {}
+
+        -- Look through scanned data to ensure count under maxPrice
+        if item.itemLink and session.scanData[item.itemLink] and
+            session.scanData[item.itemLink].buyoutData then
+            buyoutData = session.scanData[item.itemLink].buyoutData
+        else
+            buyoutData = {}
+        end
+
+        -- TODO optimize sorting logic
+        -- Insert keys into table, then sort table
+        priceTable = {}
+        for price, _ in pairs(buyoutData) do tinsert(priceTable, price) end
+        tsort(priceTable)
+
+        print("Checking for", item.itemLink, "maxPrice", maxPrice, "count",
+              item.count)
+        for _, price in pairs(priceTable) do
+            -- Since this is marketFlips, look past what list needs
+            if price < maxPrice then
+                -- Use table to preserve price order
+                tinsert(session.buyList[item.name],
+                        {price = price, count = buyoutData[price]})
+
+                foundCount = foundCount + item.count
+            end
+            -- print("price", price, "count", buyoutData[price])
+
+        end
+
+        if foundCount >= item.count then
+            print("Found enough for", item.name)
+        else
+            print("Error, not enough items available for shoppingList")
+        end
+    end
 end
 
 function addon.marketFlips.Test()
-    local l = {}
-    l.list = addon.marketFlips.LoadList([[#expansion classic
+    if isEmpty(session.shoppingList) then
+        addon.marketFlips.LoadList([[#expansion classic
 --#displayName Foo - Defias Pillager
 #faction Horde
 #realm Defias Pillager
 
-item
-  .itemId 123456
-  .scannedPrice 123
-  .priceThreshold 1.1
-  .count 60
-item
-  .itemId 23456
-  .scannedPrice 234
-  .priceThreshold 2.3
-  .count 9
-]])
+item --Linen Cloth
+  .itemId 2589
+  .scannedPrice 16
+  .priceThreshold 1.2
+  .count 4
 
-    l.scan = addon.auctionHouse:Scan(addon.marketFlips.scanCallback)
+]])
+        --[[
+item --Light Leather
+  .itemId 2318
+  .scannedPrice 32
+  .priceThreshold 1.5
+  .count 2
+]]
+    end
+
+    if isEmpty(session.scanData) then
+        addon.auctionHouse:Scan(addon.marketFlips.scanCallback)
+    end
+
+    addon.marketFlips:PurchaseShoppingList()
 end

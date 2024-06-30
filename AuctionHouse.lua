@@ -186,16 +186,23 @@ function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
         name, texture, count, _, _, level, _, _, _, buyoutPrice, _, _, _, _, _, _, itemID, _ =
             GetAuctionItemInfo("list", i)
 
-        -- TODO if not hasAllInfo
         if session.scanData[itemLink] then
-            if buyoutPrice < session.scanData[itemLink].lowestPrice then
+            -- Track lowestPrice separately
+            -- buyoutPrice == 0 when bid-only
+            if buyoutPrice > 0 and buyoutPrice <
+                session.scanData[itemLink].lowestPrice then
                 session.scanData[itemLink].lowestPrice = buyoutPrice
-            elseif buyoutPrice == session.scanData[itemLink].lowestPrice then
-                -- Keep track of count for same price
-                session.scanData[itemLink].count =
-                    session.scanData[itemLink].count + count
             end
-        else
+
+            -- Track historical data
+            if session.scanData[itemLink].buyoutData[buyoutPrice] then
+                -- Keep track of count for same price
+                session.scanData[itemLink].buyoutData[buyoutPrice] =
+                    session.scanData[itemLink].buyoutData[buyoutPrice] + count
+            else
+                session.scanData[itemLink].buyoutData[buyoutPrice] = count
+            end
+        elseif buyoutPrice > 0 then -- bid-only is buyout = 0
             session.scanData[itemLink] = {
                 name = name,
                 lowestPrice = buyoutPrice,
@@ -203,7 +210,9 @@ function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
                 level = level,
                 scanType = session.scanType, -- TODO propagate scanType for proper filters
                 itemIcon = texture,
-                count = count -- Count for exactly this price
+                buyoutData = {
+                    [buyoutPrice] = count -- Count for exactly this price
+                }
             }
         end
 
@@ -219,7 +228,8 @@ function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
     self:Scan()
 end
 
-function addon.auctionHouse:Scan(callback)
+-- TODO accept targeted itemsList list for faster searching
+function addon.auctionHouse:Scan(callback, itemsList)
     -- Prevent double calls
     if session.sentQuery then return end
     if not AuctionCategories then return end -- AH frame isn't loaded yet
