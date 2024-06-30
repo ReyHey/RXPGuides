@@ -18,7 +18,7 @@ addon.auctionHouse = addon:NewModule("AuctionHouse", "AceEvent-3.0")
 local session = {
     isInitialized = false,
 
-    -- Cannot cache to RXPCData, because comparisons are mutable and embedded in weighting
+    -- TODO cache data to RXPData
     scanData = {},
 
     windowOpen = false,
@@ -143,7 +143,10 @@ function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
     if not session.sentQuery then return end
 
     local resultCount, totalAuctions = GetNumAuctionItems("list")
-    print("AUCTION_ITEM_LIST_UPDATE", resultCount, totalAuctions)
+
+    -- TODO track scan progress, (50 * scanPage) / totalAuctions
+    print("AUCTION_ITEM_LIST_UPDATE", resultCount, totalAuctions,
+          addon.Round((50 * session.scanPage) / totalAuctions * 100, 2))
 
     -- session.displayFrame.scanButton:SetText(_G.SEARCHING)
 
@@ -154,11 +157,17 @@ function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
 
         -- TODO generalize
         if session.scanType == AuctionFilterButtons["Consumable"] then
-            session.scanType = AuctionFilterButtons["Trade Goods"] -- weapons
+            session.scanType = AuctionFilterButtons["Trade Goods"]
             self:Scan()
         else
             session.scanType = AuctionFilterButtons["Consumable"]
-            print("Done")
+
+            if session.scanCallback then
+                session['scanCallback'](session.scanData)
+
+                -- Reset session callback
+                session.scanCallback = nil
+            end
             -- self:Analyze()
             -- session.displayFrame.scanButton:SetText(_G.SEARCH)
             -- self:DisplayEmbeddedResults()
@@ -182,6 +191,7 @@ function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
             if buyoutPrice < session.scanData[itemLink].lowestPrice then
                 session.scanData[itemLink].lowestPrice = buyoutPrice
             elseif buyoutPrice == session.scanData[itemLink].lowestPrice then
+                -- Keep track of count for same price
                 session.scanData[itemLink].count =
                     session.scanData[itemLink].count + count
             end
@@ -193,7 +203,7 @@ function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
                 level = level,
                 scanType = session.scanType, -- TODO propagate scanType for proper filters
                 itemIcon = texture,
-                count = count
+                count = count -- Count for exactly this price
             }
         end
 
@@ -209,10 +219,13 @@ function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
     self:Scan()
 end
 
-function addon.auctionHouse:Scan()
+function addon.auctionHouse:Scan(callback)
     -- Prevent double calls
     if session.sentQuery then return end
     if not AuctionCategories then return end -- AH frame isn't loaded yet
+
+    -- Track callback between calls
+    if not session.scanCallback then session.scanCallback = callback end
 
     -- TODO use better queueing
     -- TODO abort on multiple retries
@@ -224,8 +237,6 @@ function addon.auctionHouse:Scan()
         return
     end
     -- print("addon.auctionHouse:Scan()", session.scanType, session.scanPage)
-
-    -- TODO reset usable = true
 
     session.sentQuery = true
 

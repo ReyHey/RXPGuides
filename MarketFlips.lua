@@ -132,8 +132,16 @@ addon.marketFlips.functions.scannedPrice = addon.marketFlips.functions.number
 addon.marketFlips.functions.priceThreshold = addon.marketFlips.functions.number
 addon.marketFlips.functions.count = addon.marketFlips.functions.number
 
+function addon.marketFlips.scanCallback(data)
+    print("marketFlips scanCallback")
+    RXPD3 = data
+
+    -- TODO process scanData, looking for sequential increasing costs for items in current shopping list
+end
+
 function addon.marketFlips.Test()
-    return addon.marketFlips.LoadList([[#expansion classic
+    local l = {}
+    l.list = addon.marketFlips.LoadList([[#expansion classic
 --#displayName Foo - Defias Pillager
 #faction Horde
 #realm Defias Pillager
@@ -149,4 +157,6 @@ item
   .priceThreshold 2.3
   .count 9
 ]])
+
+    l.scan = addon.auctionHouse:Scan(addon.marketFlips.scanCallback)
 end
