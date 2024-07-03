@@ -144,13 +144,23 @@ addon.marketFlips.functions.scannedPrice = addon.marketFlips.functions.number
 addon.marketFlips.functions.priceThreshold = addon.marketFlips.functions.number
 addon.marketFlips.functions.count = addon.marketFlips.functions.number
 
-function addon.marketFlips:PurchaseShoppingList()
-    -- for _, name in session.buyList[item.name]
+function addon.marketFlips:PurchaseShoppingListItem()
+    -- TODO this will be UI chosen, doesn't work with async querying
+    for _, data in ipairs(session.shoppingList.items) do
+        print("PurchaseShoppingListItem querying for", data.name)
+        addon.auctionHouse:SearchForBuyoutItem(data)
+
+        -- addon.auctionHouse:Query({scanCallback = addon.marketFlips.scanCallback,itemData = data})
+
+        break -- TODO just search for first one, testing without UI
+    end
+
 end
 
 function addon.marketFlips.scanCallback(data)
     -- scanData is itemLink ID, stemming from ItemUpgrades and randomized gear
     -- Trade Goods are all static, so we use itemId
+    -- TODO don't overwrite all data, keep per itemId, now that querying instead of scanning
     session.scanData = data
 
     -- No shopping list so nothing to compare against
@@ -234,9 +244,7 @@ item --Light Leather
 ]]
     end
 
-    if isEmpty(session.scanData) then
-        addon.auctionHouse:Scan(addon.marketFlips.scanCallback)
-    end
+    -- if isEmpty(session.scanData) then addon.auctionHouse:Scan() end
 
-    addon.marketFlips:PurchaseShoppingList()
+    addon.marketFlips:PurchaseShoppingListItem()
 end

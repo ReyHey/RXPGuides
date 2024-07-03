@@ -67,16 +67,19 @@ local function getNameFromLink(itemLink)
 end
 
 -- TODO generalize for itemUpgrades.AH use
-function addon.auctionHouse:SearchForBuyoutItem(nodeData)
-    if not (nodeData.Name and nodeData.ItemLevel) then return end
+function addon.auctionHouse:SearchForBuyoutItem(itemData)
+    if not itemData.name then return end
 
-    -- print("SearchForBuyoutItem", nodeData.Name)
+    print("SearchForBuyoutItem", itemData.name)
 
     if _G.BrowseResetButton then _G.BrowseResetButton:Click() end
 
-    _G.BrowseName:SetText(getNameFromLink(nodeData.ItemLink))
-    _G.BrowseMinLevel:SetText(nodeData.ItemLevel)
-    _G.BrowseMaxLevel:SetText(nodeData.ItemLevel)
+    _G.BrowseName:SetText('"' .. itemData.name .. '"')
+
+    if itemData.itemLevel then
+        _G.BrowseMinLevel:SetText(itemData.itemLevel)
+        _G.BrowseMaxLevel:SetText(itemData.itemLevel)
+    end
 
     -- Sort to make item very likely on first page
     -- sortTable, sortColumn, oppositeOrder
@@ -84,31 +87,32 @@ function addon.auctionHouse:SearchForBuyoutItem(nodeData)
     _G.AuctionFrameTab1:Click()
 
     -- Pre-populates UI, so let user retry if server overloaded
-    if CanSendAuctionQuery() then _G.AuctionFrameBrowse_Search() end
+    if CanSendAuctionQuery() then
+        session.sentQuery = true
+        _G.AuctionFrameBrowse_Search()
+    end
 
     -- TODO scan page handling
 end
 
--- TODO generalize for itemUpgrades.AH use
-function addon.auctionHouse:FindItemOnPage(nodeData)
-    if not nodeData then
-        -- print("FindItemOnPage error: selectedRow nil")
+function addon.auctionHouse:FindItemAuction(itemData, recursive)
+    if not itemData then
+        -- print("FindItemAuction error: itemData nil")
         return
     end
-    if not (nodeData.ItemID and nodeData.ItemLink and nodeData.BuyoutMoney) then
+    if not (itemData.ItemID and itemData.ItemLink and itemData.BuyoutMoney) then
         return
     end
 
-    local resultCount = GetNumAuctionItems("list")
+    local resultCount, totalAuctions = GetNumAuctionItems("list")
 
     if resultCount == 0 then
-        -- print("FindItemOnPage error: no results")
+        print("FindItemAuction no results, recursive =", recursive)
         return
     end
 
-    -- print("FindItemOnPage", nodeData.Name, resultCount)
-    local itemLink
-    local buyoutPrice, itemID
+    -- print("FindItemAuction", itemData.Name, resultCount)
+    local itemLink, buyoutPrice, itemID
 
     for i = 1, resultCount do
         itemLink = GetAuctionItemLink("list", i)
@@ -118,28 +122,32 @@ function addon.auctionHouse:FindItemOnPage(nodeData)
             GetAuctionItemInfo("list", i)
         -- print("Evaluating", i, itemLink, buyoutPrice)
 
-        if itemID == nodeData.ItemID and itemLink == nodeData.ItemLink and
-            buyoutPrice == nodeData.BuyoutMoney then
+        if itemID == itemData.ItemID and itemLink == itemData.ItemLink and
+            buyoutPrice == itemData.BuyoutMoney and false then
             SetSelectedAuctionItem("list", i)
             return i
         end
 
     end
 
-    -- Shouldn't need to handle Pagination, sorted by cheapest which is the goal
-    --  May hit issues if 10+ bid-only
-    -- Rely on BrowseNextPageButton:Click() :IsEnabled for easy pagination handling
+    -- TODO handle Pagination, sorted by cheapest so unlikely
+    -- Rely on BrowseNextPageButton:IsEnabled() for easy pagination handling
+    if _G.BrowseNextPageButton:IsEnabled() then
+        -- If next button is enabled, and we're down here; then auction not found
+        -- Additionally, the next page button is disabled on final page, so no need to track count
+        _G.BrowseNextPageButton:Click()
+        return self:FindItemAuction(itemData, true)
+    else
+        -- If next page not enabled, and we're here; then no results at all
+        print("FindItemAuction no matches in", totalAuctions, "results")
+        return nil
+    end
 end
 
 -- Triggers each time the scroll panel is updated
 -- Scrolling, initial population
 -- Blizzard's standard auction house view overcomes this problem by reacting to AUCTION_ITEM_LIST_UPDATE and re-querying the items.
 function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
-    -- TODO prevent overwriting/blocking full scan
-    if session.selectedRow and session.selectedRow.nodeData then
-        self:FindItemOnPage(session.selectedRow.nodeData)
-    end
-
     if not session.sentQuery then return end
 
     local resultCount, totalAuctions = GetNumAuctionItems("list")
@@ -158,15 +166,15 @@ function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
         -- TODO generalize
         if session.scanType == AuctionFilterButtons["Consumable"] then
             session.scanType = AuctionFilterButtons["Trade Goods"]
-            self:Scan()
+            self:Query(session.queryData)
         else
             session.scanType = AuctionFilterButtons["Consumable"]
 
-            if session.scanCallback then
-                session['scanCallback'](session.scanData)
+            if session.queryData.scanCallback then
+                session.queryData['scanCallback'](session.scanData)
 
                 -- Reset session callback
-                session.scanCallback = nil
+                session.queryData.scanCallback = nil
             end
             -- self:Analyze()
             -- session.displayFrame.scanButton:SetText(_G.SEARCH)
@@ -225,33 +233,46 @@ function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
 
     session.scanResults = session.scanResults + resultCount
 
-    self:Scan()
+    self:Query(session.queryData)
 end
 
--- TODO accept targeted itemsList list for faster searching
-function addon.auctionHouse:Scan(callback, itemsList)
+-- Async processing with AUCTION_ITEM_LIST_UPDATE actually handling the analysis
+-- TODO revert to scan functionality
+function addon.auctionHouse:Query(queryData)
+    queryData = queryData or {} -- {callback, itemData}
     -- Prevent double calls
     if session.sentQuery then return end
     if not AuctionCategories then return end -- AH frame isn't loaded yet
 
+    if not queryData.itemData then
+        print("Query error: itemData nil")
+        return
+    end
+    local item = queryData.itemData
+
+    if not item.name then return end
+    print("Query", item.name)
+
     -- Track callback between calls
-    if not session.scanCallback then session.scanCallback = callback end
+    if not session.scanCallback then
+        session.scanCallback = queryData.callback
+    end
 
     -- TODO use better queueing
     -- TODO abort on multiple retries
     if not CanSendAuctionQuery() then
-        -- print("addon.auctionHouse:Scan() - queued", session.scanPage, session.scanType)
+        -- print("addon.auctionHouse:Search() - queued", session.scanPage, session.scanType)
 
         -- TODO check if BrowseSearchButton is re-enabled
-        C_Timer.After(0.35, function() self:Scan() end)
+        C_Timer.After(0.35, function() self:Search() end)
         return
     end
-    -- print("addon.auctionHouse:Scan()", session.scanType, session.scanPage)
+    -- print("addon.auctionHouse:Search()", session.scanType, session.scanPage)
 
     session.sentQuery = true
 
     -- text, minLevel, maxLevel, page, usable, rarity, getAll, exactMatch, filterData
-    QueryAuctionItems("", nil, nil, session.scanPage, true,
+    QueryAuctionItems(fmt('"%s"', item.name), nil, nil, session.scanPage, true,
                       Enum.ItemQuality.Standard, false, false,
                       AuctionCategories[session.scanType].filters)
 end
