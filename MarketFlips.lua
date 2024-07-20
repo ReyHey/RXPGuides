@@ -130,6 +130,8 @@ function addon.marketFlips.functions.itemId(itemId)
     return true
 end
 
+-- TODO also scan current bags and count those against .count
+-- TODO see if we can query bank inventory remotely
 function addon.marketFlips.functions.number(number)
     if type(number) == "string" then -- on parse
         local n = tonumber(number)
