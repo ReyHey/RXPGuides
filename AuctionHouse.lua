@@ -65,6 +65,7 @@ function addon.auctionHouse:AUCTION_HOUSE_CLOSED()
     -- Reset session
     session.windowOpen = false
     session.sentQuery = false
+    session.sentScan = false
     session.scanPage = 0
     session.scanResults = 0
     session.scanType = AuctionFilterButtons["Consumable"]
@@ -73,12 +74,13 @@ function addon.auctionHouse:AUCTION_HOUSE_CLOSED()
 end
 
 -- TODO generalize for itemUpgrades.AH use
+-- TODO make button for "Analyse" that checks availability for full Shopping List
 function addon.auctionHouse:SearchForBuyoutItem(itemData)
     if not itemData.name then return end
 
     if not session.windowOpen then return end
 
-    print("SearchForBuyoutItem", itemData.name)
+    print("SearchForBuyoutItem", itemData.itemLink)
 
     if _G.BrowseResetButton then _G.BrowseResetButton:Click() end
 
@@ -100,7 +102,7 @@ function addon.auctionHouse:SearchForBuyoutItem(itemData)
         _G.AuctionFrameBrowse_Search()
     end
 
-    -- TODO scan page handling
+    -- Results get processed async by AUCTION_ITEM_LIST_UPDATE
 end
 
 function addon.auctionHouse:FindItemAuction(itemData, recursive)
@@ -155,44 +157,44 @@ end
 -- Scrolling, initial population
 -- Blizzard's standard auction house view overcomes this problem by reacting to AUCTION_ITEM_LIST_UPDATE and re-querying the items.
 function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
-    if not session.sentQuery then return end
+    if not (session.sentQuery or session.sentScan) then return end
 
     local resultCount, totalAuctions = GetNumAuctionItems("list")
 
     -- TODO track scan progress, (50 * scanPage) / totalAuctions
-    print("AUCTION_ITEM_LIST_UPDATE", resultCount, totalAuctions,
-          addon.Round((50 * session.scanPage) / totalAuctions * 100, 2))
+    print("AUCTION_ITEM_LIST_UPDATE", resultCount, totalAuctions)
 
+    -- TODO update status on ShoppingList UI
     -- session.displayFrame.scanButton:SetText(_G.SEARCHING)
 
     -- TODO generalize for itemUpgrades
     if resultCount == 0 or totalAuctions == 0 then
         session.sentQuery = false
+        session.sentScan = false
         session.scanPage = 0 -- TODO show scanPage on UI
 
-        -- TODO generalize
-        if session.scanType == AuctionFilterButtons["Consumable"] then
-            session.scanType = AuctionFilterButtons["Trade Goods"]
-            self:Query(session.queryData)
-        else
-            session.scanType = AuctionFilterButtons["Consumable"]
+        print("Last page, resultCount == 0 or totalAuctions == 0")
+        if session.queryData.scanCallback then
+            session.queryData['scanCallback'](session.scanData)
 
-            if session.queryData.scanCallback then
-                session.queryData['scanCallback'](session.scanData)
-
-                -- Reset session callback
-                session.queryData.scanCallback = nil
-            end
-            -- self:Analyze()
-            -- session.displayFrame.scanButton:SetText(_G.SEARCH)
-            -- self:DisplayEmbeddedResults()
+            -- Reset session callback
+            session.queryData.scanCallback = nil
         end
 
-        return
+        -- TODO generalize for scanning
+        if session.sentScan then
+            if session.scanType == AuctionFilterButtons["Consumable"] then
+                session.scanType = AuctionFilterButtons["Trade Goods"]
+                self:AsyncScan(session.queryData)
+            else
+                session.scanType = AuctionFilterButtons["Consumable"]
+            end
+            return
+        end
     end
 
     local itemLink
-    local name, texture, count, level, buyoutPrice, itemID
+    local name, texture, count, level, buyoutPrice, itemID, costPerOne
 
     for i = 1, resultCount do
         itemLink = GetAuctionItemLink("list", i)
@@ -201,53 +203,72 @@ function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
         name, texture, count, _, _, level, _, _, _, buyoutPrice, _, _, _, _, _, _, itemID, _ =
             GetAuctionItemInfo("list", i)
 
+        costPerOne = addon.Round(buyoutPrice / count, 6)
+
+        -- TODO account for stackPrice and cheapest copper/item.count
         if session.scanData[itemLink] then
             -- Track lowestPrice separately
             -- buyoutPrice == 0 when bid-only
-            if buyoutPrice > 0 and buyoutPrice <
+            if costPerOne > 0 and costPerOne <
                 session.scanData[itemLink].lowestPrice then
-                session.scanData[itemLink].lowestPrice = buyoutPrice
+                session.scanData[itemLink].lowestPrice = costPerOne
             end
 
             -- Track historical data
-            if session.scanData[itemLink].buyoutData[buyoutPrice] then
+            if session.scanData[itemLink].buyoutData[costPerOne] then
                 -- Keep track of count for same price
-                session.scanData[itemLink].buyoutData[buyoutPrice] =
-                    session.scanData[itemLink].buyoutData[buyoutPrice] + count
+                session.scanData[itemLink].buyoutData[costPerOne] =
+                    session.scanData[itemLink].buyoutData[costPerOne] + count
             else
-                session.scanData[itemLink].buyoutData[buyoutPrice] = count
+                session.scanData[itemLink].buyoutData[costPerOne] = count
             end
         elseif buyoutPrice > 0 then -- bid-only is buyout = 0
             session.scanData[itemLink] = {
                 name = name,
-                lowestPrice = buyoutPrice,
+                lowestPrice = costPerOne,
                 itemID = itemID,
                 level = level,
-                scanType = session.scanType, -- TODO propagate scanType for proper filters
+                scanType = session.scanType,
                 itemIcon = texture,
                 buyoutData = {
-                    [buyoutPrice] = count -- Count for exactly this price
+                    [costPerOne] = count -- Count for exactly this price
                 }
             }
         end
 
-        -- print("scan", itemLink, itemID, hasAllInfo, buyoutPrice)
+        -- print("scan", itemLink, costPerOne)
     end
 
-    session.sentQuery = false
+    if session.sentQuery then
+        session.sentQuery = false
+    elseif session.sentScan then
+        session.sentScan = false
+    end
 
     session.scanPage = session.scanPage + 1
 
     session.scanResults = session.scanResults + resultCount
 
-    self:Query(session.queryData)
+    if session.sentQuery then
+        session.sentQuery = false
+        -- Rely on BrowseNextPageButton:IsEnabled() for easy pagination handling
+        if _G.BrowseNextPageButton:IsEnabled() then
+            _G.BrowseNextPageButton:Click()
+            -- Async automatically handled by AUCTION_ITEM_LIST_UPDATE
+            -- Wouldn't have gotten here if final page
+            return
+        end
+    elseif session.sentScan then
+        session.sentScan = false
+        self:AsyncScan(session.queryData)
+    end
 end
 
 -- Async processing with AUCTION_ITEM_LIST_UPDATE actually handling the analysis
-function addon.auctionHouse:Query(queryData)
+function addon.auctionHouse:AsyncScan(queryData)
     queryData = queryData or {} -- {callback, itemData}
     -- Prevent double calls
-    if session.sentQuery then return end
+    if session.sentScan then return end
     if not AuctionCategories then return end -- AH frame isn't loaded yet
 
     RXPD3 = queryData
@@ -275,7 +296,7 @@ function addon.auctionHouse:Query(queryData)
     end
     -- print("addon.auctionHouse:Search()", session.scanType, session.scanPage)
 
-    session.sentQuery = true
+    session.sentScan = true
 
     -- text, minLevel, maxLevel, page, usable, rarity, getAll, exactMatch, filterData
     QueryAuctionItems(fmt('"%s"', item.name), nil, nil, session.scanPage, true,
@@ -306,20 +327,22 @@ end
 local function Initializer(row, data)
     -- Data references
     row.itemData = data
-
     row.itemLink = data.itemLink
+
     -- Frame elements
     row.Name:SetText(getColorizedName(data.itemLink, data.name))
-    -- TODO count nil for MarketFlips, just buy as much as you want/can/care
     row.ItemFrame:SetNormalTexture(data.itemTexture)
-    row.Status:SetText(fmt("(??/%d)", data.count))
 
+    if data.count then
+        row.Status:SetText(fmt("(??/%d)", data.count))
+    else -- count nil for MarketFlips, just buy as much as you want/can/care
+        row.Status:SetText('')
+    end
     row:Show()
 
 end
 
 -- Executed when AuctionFrame opens
--- TODO hide if SideDressUpFrame pops up
 function addon.auctionHouse.shoppingList:CreateGui(attachment)
     if not addon.settings.profile.enableShoppingList then return end
     if session.shoppingListUI then return end
@@ -537,6 +560,7 @@ function addon.auctionHouse.shoppingList.scanCallback(callbackData)
     -- scanData is itemLink ID, stemming from ItemUpgrades and randomized gear
     -- Trade Goods are all static, so we use itemId
 
+    print("scanCallback")
     -- TODO cache callbackData?
     -- No shopping list so nothing to compare against
     if not session.shoppingList then return end
@@ -549,8 +573,8 @@ function addon.auctionHouse.shoppingList.scanCallback(callbackData)
     for _, item in ipairs(session.shoppingList.items) do
 
         -- First, make sure there's enough within range to satisfy order
-        -- TODO handle .count == nil for Market Flips
         foundCount = 0
+        -- TODO per stack vs per item, need per item
         maxPrice = addon.Round(item.scannedPrice * (item.priceThreshold or 1.2),
                                0)
 
@@ -584,13 +608,15 @@ function addon.auctionHouse.shoppingList.scanCallback(callbackData)
                 tinsert(session.buyList[item.name],
                         {price = price, count = buyoutData[price]})
 
-                foundCount = foundCount + item.count
+                foundCount = foundCount + buyoutData[price]
             end
             -- print("price", price, "count", buyoutData[price])
 
         end
 
-        if foundCount >= item.count then
+        if not item.count then
+            print("MarketFlips, unlimited count")
+        elseif foundCount >= item.count then
             print("Found enough for", item.name)
         else
             print("Error, not enough items available for shoppingList")
@@ -637,6 +663,4 @@ item --Copper Ore
   .count 3
 ]])
     end
-
-    addon.auctionHouse.shoppingList:DisplayList()
 end
