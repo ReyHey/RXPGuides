@@ -57,7 +57,6 @@ end
 function addon.auctionHouse:AUCTION_HOUSE_SHOW()
     session.windowOpen = true
 
-    -- TODO setting
     addon.auctionHouse.shoppingList:CreateGui(_G.AuctionFrame)
 end
 
@@ -245,7 +244,6 @@ function addon.auctionHouse:AUCTION_ITEM_LIST_UPDATE()
 end
 
 -- Async processing with AUCTION_ITEM_LIST_UPDATE actually handling the analysis
--- TODO revert to scan functionality
 function addon.auctionHouse:Query(queryData)
     queryData = queryData or {} -- {callback, itemData}
     -- Prevent double calls
@@ -272,7 +270,6 @@ function addon.auctionHouse:Query(queryData)
     if not CanSendAuctionQuery() then
         -- print("addon.auctionHouse:Search() - queued", session.scanPage, session.scanType)
 
-        -- TODO check if BrowseSearchButton is re-enabled
         C_Timer.After(0.35, function() self:Search() end)
         return
     end
@@ -287,14 +284,14 @@ function addon.auctionHouse:Query(queryData)
 end
 
 function addon.auctionHouse.shoppingList:Setup()
-    if not addon.settings.profile.enableMarketFlips or
+    if not addon.settings.profile.enableShoppingList or
         not addon.settings.profile.enableTips then return end
 
     if not addon.settings.profile.enableBetaFeatures then return end
 
     session.shoppingList = {}
     session.buyList = {}
-    session.selectedListRow = nil
+    session.clickedListRow = nil
     RXPD = session
 
 end
@@ -323,8 +320,8 @@ end
 
 -- Executed when AuctionFrame opens
 -- TODO hide if SideDressUpFrame pops up
--- TODO hide if non-RXP tab is selected
 function addon.auctionHouse.shoppingList:CreateGui(attachment)
+    if not addon.settings.profile.enableShoppingList then return end
     if session.shoppingListUI then return end
     if not attachment then return end
 
@@ -343,7 +340,6 @@ function addon.auctionHouse.shoppingList:CreateGui(attachment)
     local DataProvider = CreateDataProvider()
     local ScrollView = CreateScrollBoxListLinearView()
     ScrollView:SetDataProvider(DataProvider)
-    -- ScrollView:SetElementExtent(37 * 2 + 19)
     session.shoppingListUI.DataProvider = DataProvider
 
     ScrollUtil.InitScrollBoxListWithScrollBar(session.shoppingListUI.ScrollBox,
@@ -353,25 +349,6 @@ function addon.auctionHouse.shoppingList:CreateGui(attachment)
     ScrollView:SetElementInitializer("RXP_IU_AH_ShoppingList_ItemRow",
                                      Initializer)
 
-    --[[
-    ScrollView:SetElementExtentCalculator(
-        function(_, itemBlock)
-            if itemBlock.best and itemBlock.budget then
-                -- Header + two rows
-                return 93 -- 19 + 37 * 2
-            end
-
-            -- print("SetElementExtentCalculator", itemBlock.Name, "one row")
-            -- Header + one row
-            return 56 -- 19 + 37
-        end)
-
-    session.shoppingListUI.scanButton:SetScript("OnClick", function()
-        session.shoppingListUI.DataProvider:Flush()
-        addon.itemUpgrades.AH:Scan()
-    end)
-    --]]
-
     -- Triggers when clicking on tabs or using _G.AuctionFrameTab1:Click()
     hooksecurefunc(_G, "AuctionFrameTab_OnClick", function(button, ...)
         -- No shopping list, so don't do anything
@@ -379,40 +356,44 @@ function addon.auctionHouse.shoppingList:CreateGui(attachment)
 
         -- Show sidebar only if RXPGuides tab selected
         if button.isRXP and session.shoppingListUI then
-            print("session.shoppingListUI:Show()")
+            if _G.SideDressUpFrame and _G.SideDressUpFrame:IsShown() then
+                _G.SideDressUpFrame:Hide()
+            end
             session.shoppingListUI:Show()
         else
             -- If selected row, then likely purchasing an item so don't hide
-            if not session.selectedListRow then
+            if not session.clickedListRow then
                 session.shoppingListUI:Hide()
             end
 
         end
     end)
 
+    if _G.SideDressUpFrame then
+        -- Hide Shopping List if dressup sidebar appears
+        hooksecurefunc(_G.SideDressUpFrame, "Show", function()
+            if session.shoppingListUI:IsShown() then
+                session.shoppingListUI:Hide()
+            end
+        end)
+    end
+
     addon.auctionHouse.shoppingList:DisplayList()
 end
 
 function addon.auctionHouse.shoppingList.RowOnEnter(row)
-    if session.selectedListRow == row then return end
-    -- row:LockHighlight()
+    if session.clickedListRow == row then return end
 end
 
 function addon.auctionHouse.shoppingList.RowOnLeave(row)
-    if session.selectedListRow == row then return end
-    -- row:UnlockHighlight()
+    if session.clickedListRow == row then return end
 end
 
 function addon.auctionHouse.shoppingList.RowOnClick(this)
-    -- TODO turn into clickedListRow
-    if session.selectedListRow == this then
-        session.selectedListRow = nil
-        -- this:UnlockHighlight()
+    if session.clickedListRow == this then
+        session.clickedListRow = nil
     else
-        -- Remove previous locked highlight
-        -- if session.selectedListRow then session.selectedListRow:UnlockHighlight() end
-        session.selectedListRow = this
-        -- this:LockHighlight()
+        session.clickedListRow = this
 
         addon.auctionHouse:SearchForBuyoutItem(this.itemData)
     end
@@ -440,6 +421,8 @@ function addon.auctionHouse.shoppingList.LoadList(text)
     -- TODO if bad list imported, should the existing one be preserved?
     session.shoppingList = list
     session.buyList = {}
+
+    addon.auctionHouse.shoppingList:DisplayList()
 
     return list
 end
@@ -553,8 +536,8 @@ addon.auctionHouse.shoppingList.functions.count = addon.auctionHouse
 function addon.auctionHouse.shoppingList.scanCallback(callbackData)
     -- scanData is itemLink ID, stemming from ItemUpgrades and randomized gear
     -- Trade Goods are all static, so we use itemId
-    -- TODO don't overwrite all data, keep per itemId, now that querying instead of scanning
 
+    -- TODO cache callbackData?
     -- No shopping list so nothing to compare against
     if not session.shoppingList then return end
     -- [itemLink] = { count = 123, price = 23 }
@@ -566,6 +549,7 @@ function addon.auctionHouse.shoppingList.scanCallback(callbackData)
     for _, item in ipairs(session.shoppingList.items) do
 
         -- First, make sure there's enough within range to satisfy order
+        -- TODO handle .count == nil for Market Flips
         foundCount = 0
         maxPrice = addon.Round(item.scannedPrice * (item.priceThreshold or 1.2),
                                0)
@@ -586,7 +570,6 @@ function addon.auctionHouse.shoppingList.scanCallback(callbackData)
             buyoutData = {}
         end
 
-        -- TODO optimize sorting logic
         -- Insert keys into table, then sort table
         priceTable = {}
         for price, _ in pairs(buyoutData) do tinsert(priceTable, price) end
