@@ -194,6 +194,7 @@ local settingsDBDefaults = {
         enableDrowningScreenFlash = true,
         enableQuestChoiceRecommendation = true,
         enableQuestChoiceGoldRecommendation = true,
+        enableShoppingList = true,
 
         enableEmergencyActions = true,
         emergencyThreshold = 0.2,
@@ -2272,8 +2273,8 @@ function addon.settings:CreateAceOptionsPanel()
                             addon.itemUpgrades.AH:Setup()
                         end
                     },
-                    marketFlipsHeader = {
-                        name = L('Market Flips'),
+                    shoppingListHeader = {
+                        name = L('Shopping List'),
                         type = "header",
                         width = "full",
                         order = 6.0,
@@ -2282,8 +2283,8 @@ function addon.settings:CreateAceOptionsPanel()
                                        not self.profile.enableBetaFeatures
                         end
                     },
-                    enableMarketFlips = {
-                        name = fmt("%s %s", _G.ENABLE, 'Market Flips'),
+                    enableShoppingList = {
+                        name = fmt("%s %s", _G.ENABLE, L('Shopping List')),
                         -- desc = '',
                         type = "toggle",
                         width = optionsWidth,
@@ -2294,7 +2295,7 @@ function addon.settings:CreateAceOptionsPanel()
                         end,
                         set = function(info, value)
                             SetProfileOption(info, value)
-                            addon.auctionHouse.shoppingList:Setup():Setup()
+                            addon.auctionHouse.shoppingList:Setup()
                         end
                     }
                 }
