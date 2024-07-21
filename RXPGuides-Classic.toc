@@ -32,7 +32,6 @@ Targeting.lua
 Tips.lua
 InventoryManager.lua
 AuctionHouse.lua
-MarketFlips.lua
 
 map.lua
 functions.lua

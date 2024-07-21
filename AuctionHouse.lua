@@ -2,18 +2,26 @@ local addonName, addon = ...
 
 if addon.gameVersion > 20000 then return end
 
-local fmt, tinsert, ipairs, pairs, next, type, wipe, tonumber, strlower =
-    string.format, table.insert, ipairs, pairs, next, type, wipe, tonumber,
-    strlower
+local fmt, tinsert, ipairs, pairs, next, type, wipe, tonumber, strlower, tsort,
+      sgmatch = string.format, table.insert, ipairs, pairs, next, type, wipe,
+                tonumber, strlower, table.sort, string.gmatch
 
 local CanSendAuctionQuery, QueryAuctionItems, SetSelectedAuctionItem =
     _G.CanSendAuctionQuery, _G.QueryAuctionItems, _G.SetSelectedAuctionItem
 local GetNumAuctionItems, GetAuctionItemLink, GetAuctionItemInfo =
     _G.GetNumAuctionItems, _G.GetAuctionItemLink, _G.GetAuctionItemInfo
 
+local GetItemInfo, GetItemInfoInstant = C_Item.GetItemInfo,
+                                        C_Item.GetItemInfoInstant
+
+-- TODO generalize for ItemUpgrades
 local AuctionFilterButtons = {["Consumable"] = 4, ["Trade Goods"] = 5}
 
+local L = addon.locale.Get
+
 addon.auctionHouse = addon:NewModule("AuctionHouse", "AceEvent-3.0")
+addon.auctionHouse.shoppingList = addon:NewModule("MarketFlips", "AceEvent-3.0")
+addon.auctionHouse.shoppingList.functions = {}
 
 local session = {
     isInitialized = false,
@@ -29,6 +37,8 @@ local session = {
     selectedRow = nil
 }
 
+local function isEmpty(list) return not list or next(list) == nil end
+
 function addon.auctionHouse:Setup()
     if session.isInitialized then return end
 
@@ -37,14 +47,18 @@ function addon.auctionHouse:Setup()
 
     self:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
 
+    addon.auctionHouse.shoppingList:Setup()
+
     session.isInitialized = true
     RXPD2 = session
+
 end
 
 function addon.auctionHouse:AUCTION_HOUSE_SHOW()
     session.windowOpen = true
 
-    -- self:CreateEmbeddedGui()
+    -- TODO setting
+    addon.auctionHouse.shoppingList:CreateGui(_G.AuctionFrame)
 end
 
 function addon.auctionHouse:AUCTION_HOUSE_CLOSED()
@@ -55,20 +69,15 @@ function addon.auctionHouse:AUCTION_HOUSE_CLOSED()
     session.scanPage = 0
     session.scanResults = 0
     session.scanType = AuctionFilterButtons["Consumable"]
-end
 
--- Helper function for scanning.xml RXP_IU_AH_BuyButton:OnClick
-function addon.auctionHouse:SearchForSelectedItem()
-    return self:SearchForBuyoutItem(session.selectedRow.nodeData)
-end
-
-local function getNameFromLink(itemLink)
-    return string.match(itemLink, "h%[(.*)%]|h")
+    if session.shoppingListUI then session.shoppingListUI:Hide() end
 end
 
 -- TODO generalize for itemUpgrades.AH use
 function addon.auctionHouse:SearchForBuyoutItem(itemData)
     if not itemData.name then return end
+
+    if not session.windowOpen then return end
 
     print("SearchForBuyoutItem", itemData.name)
 
@@ -130,7 +139,6 @@ function addon.auctionHouse:FindItemAuction(itemData, recursive)
 
     end
 
-    -- TODO handle Pagination, sorted by cheapest so unlikely
     -- Rely on BrowseNextPageButton:IsEnabled() for easy pagination handling
     if _G.BrowseNextPageButton:IsEnabled() then
         -- If next button is enabled, and we're down here; then auction not found
@@ -244,6 +252,7 @@ function addon.auctionHouse:Query(queryData)
     if session.sentQuery then return end
     if not AuctionCategories then return end -- AH frame isn't loaded yet
 
+    RXPD3 = queryData
     if not queryData.itemData then
         print("Query error: itemData nil")
         return
@@ -275,4 +284,376 @@ function addon.auctionHouse:Query(queryData)
     QueryAuctionItems(fmt('"%s"', item.name), nil, nil, session.scanPage, true,
                       Enum.ItemQuality.Standard, false, false,
                       AuctionCategories[session.scanType].filters)
+end
+
+function addon.auctionHouse.shoppingList:Setup()
+    if not addon.settings.profile.enableMarketFlips or
+        not addon.settings.profile.enableTips then return end
+
+    if not addon.settings.profile.enableBetaFeatures then return end
+
+    session.shoppingList = {}
+    session.buyList = {}
+    session.selectedListRow = nil
+    RXPD = session
+
+end
+
+local function getColorizedName(itemLink, itemName)
+    local quality = C_Item.GetItemQualityByID(itemLink)
+    local h = ITEM_QUALITY_COLORS[quality].hex
+
+    return h .. itemName .. '|r'
+end
+
+local function Initializer(row, data)
+    -- Data references
+    row.itemData = data
+
+    row.itemLink = data.itemLink
+    -- Frame elements
+    row.Name:SetText(getColorizedName(data.itemLink, data.name))
+    -- TODO count nil for MarketFlips, just buy as much as you want/can/care
+    row.ItemFrame:SetNormalTexture(data.itemTexture)
+    row.Status:SetText(fmt("(??/%d)", data.count))
+
+    row:Show()
+
+end
+
+-- Executed when AuctionFrame opens
+-- TODO hide if SideDressUpFrame pops up
+-- TODO hide if non-RXP tab is selected
+function addon.auctionHouse.shoppingList:CreateGui(attachment)
+    if session.shoppingListUI then return end
+    if not attachment then return end
+
+    session.shoppingListUI = _G["RXP_IU_AH_ShoppingList_Frame"]
+    if not session.shoppingListUI then return end
+
+    session.shoppingListUI:SetParent(attachment)
+    session.shoppingListUI:SetPoint("TOPLEFT", attachment, "TOPRIGHT", 0, -30)
+    session.shoppingListUI:SetHeight(_G.AuctionFrame:GetHeight() * 0.9)
+
+    -- fmt("%s - %s", addon.title, L('Shopping List'))
+    _G.RXP_IU_AH_ShoppingList_Title:SetText(L('Shopping List'))
+
+    -- session.shoppingListUI.ScrollBox.ScrollBar:SetHideIfUnscrollable(true)
+
+    local DataProvider = CreateDataProvider()
+    local ScrollView = CreateScrollBoxListLinearView()
+    ScrollView:SetDataProvider(DataProvider)
+    -- ScrollView:SetElementExtent(37 * 2 + 19)
+    session.shoppingListUI.DataProvider = DataProvider
+
+    ScrollUtil.InitScrollBoxListWithScrollBar(session.shoppingListUI.ScrollBox,
+                                              session.shoppingListUI.ScrollBox
+                                                  .ScrollBar, ScrollView)
+
+    ScrollView:SetElementInitializer("RXP_IU_AH_ShoppingList_ItemRow",
+                                     Initializer)
+
+    --[[
+    ScrollView:SetElementExtentCalculator(
+        function(_, itemBlock)
+            if itemBlock.best and itemBlock.budget then
+                -- Header + two rows
+                return 93 -- 19 + 37 * 2
+            end
+
+            -- print("SetElementExtentCalculator", itemBlock.Name, "one row")
+            -- Header + one row
+            return 56 -- 19 + 37
+        end)
+
+    session.shoppingListUI.scanButton:SetScript("OnClick", function()
+        session.shoppingListUI.DataProvider:Flush()
+        addon.itemUpgrades.AH:Scan()
+    end)
+    --]]
+
+    -- Triggers when clicking on tabs or using _G.AuctionFrameTab1:Click()
+    hooksecurefunc(_G, "AuctionFrameTab_OnClick", function(button, ...)
+        -- No shopping list, so don't do anything
+        if isEmpty(session.shoppingList) then return end
+
+        -- Show sidebar only if RXPGuides tab selected
+        if button.isRXP and session.shoppingListUI then
+            print("session.shoppingListUI:Show()")
+            session.shoppingListUI:Show()
+        else
+            -- If selected row, then likely purchasing an item so don't hide
+            if not session.selectedListRow then
+                session.shoppingListUI:Hide()
+            end
+
+        end
+    end)
+
+    addon.auctionHouse.shoppingList:DisplayList()
+end
+
+function addon.auctionHouse.shoppingList.RowOnEnter(row)
+    if session.selectedListRow == row then return end
+    -- row:LockHighlight()
+end
+
+function addon.auctionHouse.shoppingList.RowOnLeave(row)
+    if session.selectedListRow == row then return end
+    -- row:UnlockHighlight()
+end
+
+function addon.auctionHouse.shoppingList.RowOnClick(this)
+    -- TODO turn into clickedListRow
+    if session.selectedListRow == this then
+        session.selectedListRow = nil
+        -- this:UnlockHighlight()
+    else
+        -- Remove previous locked highlight
+        -- if session.selectedListRow then session.selectedListRow:UnlockHighlight() end
+        session.selectedListRow = this
+        -- this:LockHighlight()
+
+        addon.auctionHouse:SearchForBuyoutItem(this.itemData)
+    end
+end
+
+function addon.auctionHouse.shoppingList:DisplayList()
+    if not session.shoppingListUI then return end
+
+    session.shoppingListUI.DataProvider:Flush()
+
+    if not session.shoppingList.items then return end
+
+    for _, data in ipairs(session.shoppingList.items) do
+        session.shoppingListUI.DataProvider:Insert(data)
+    end
+end
+
+function addon.auctionHouse.shoppingList.LoadList(text)
+    local list = addon.auctionHouse.shoppingList:ParseList(text)
+
+    -- Only mandatory field is .items, the rest are optional
+
+    if not list or isEmpty(list.items) then return end
+
+    -- TODO if bad list imported, should the existing one be preserved?
+    session.shoppingList = list
+    session.buyList = {}
+
+    return list
+end
+
+function addon.auctionHouse.shoppingList:ParseList(text)
+    if not text then return end
+
+    local list = {items = {}}
+
+    local item = {}
+    local linenumber = 0
+    local currentStep = 0
+    local discardReturn
+
+    -- Loop over each line in guide
+    for line in sgmatch(text, "[^\n\r]+") do
+        line = line:gsub("^%s+", "")
+        line = line:gsub("%s+$", "")
+        linenumber = linenumber + 1
+
+        if line:sub(1, 4) == "item" then
+            currentStep = currentStep + 1
+            list.items[currentStep] = {}
+
+            item = list.items[currentStep]
+            -- print("Starting new step", currentStep)
+
+        elseif currentStep > 0 then -- Parse metadata tags first
+            -- Unlike leveling, farming, and talent guides, .Foo are properties here
+            -- Parse function calls
+            discardReturn = line:gsub("^%.(%S+)%s*(.*)",
+                                      function(command, lineArgs)
+                -- print("Processing guide command", command, "with (", lineArgs, ")")
+                if self.functions[command] then
+                    local element = self.functions[command](lineArgs)
+
+                    if not element then return end
+                    item[command] = element
+                else
+                    addon.error(L("Error parsing guide") .. " " ..
+                                    (item.displayName or 'Unknown') ..
+                                    ": Invalid function call (." .. command ..
+                                    ")\n" .. line)
+                end
+            end)
+
+        elseif line ~= "" or currentStep > 0 then
+            -- Parse metadata tags
+            discardReturn = line:gsub("^#(%S+)%s*(.*)", function(tag, value)
+                -- print("Parsing tag at", linenumber, tag, value)
+                -- Set metadata without overwriting
+                if tag and tag ~= "" and not list[tag] then
+                    list[tag] = value
+                end
+            end)
+
+        end
+
+        if item.itemId then
+            -- Lookup itemLink now, for AH scanData comparisons
+            -- Ignore null lookups if server overloaded
+            item.name, item.itemLink, _, _, _, _, _, _, _, item.itemTexture =
+                GetItemInfo(item.itemId)
+        end
+    end
+
+    list.displayName = list.displayName or
+                           fmt('%s - %s', addonName, L('Shopping List'))
+
+    -- TODO validate each item has a parsed itemId
+    -- TODO validate expansion
+    -- TODO validate faction
+    -- TODO validate realm
+    return list
+end
+
+function addon.auctionHouse.shoppingList.functions.itemId(itemId)
+    if type(itemId) == "string" then -- on parse
+        local id = tonumber(itemId)
+        local lookupId = GetItemInfoInstant(itemId)
+        -- print("itemId", id, itemId, lookupId, id == lookupId)
+        -- Use this to check if itemId is valid
+        return id == lookupId and id
+    end
+
+    return true
+end
+
+-- TODO also scan current bags and count those against .count
+-- TODO see if we can query bank inventory remotely
+function addon.auctionHouse.shoppingList.functions.number(number)
+    if type(number) == "string" then -- on parse
+        local n = tonumber(number)
+
+        if n > 0 then return n end
+    end
+
+    return true
+end
+
+addon.auctionHouse.shoppingList.functions.scannedPrice = addon.auctionHouse
+                                                             .shoppingList
+                                                             .functions.number
+addon.auctionHouse.shoppingList.functions.priceThreshold = addon.auctionHouse
+                                                               .shoppingList
+                                                               .functions.number
+addon.auctionHouse.shoppingList.functions.count = addon.auctionHouse
+                                                      .shoppingList.functions
+                                                      .number
+
+function addon.auctionHouse.shoppingList.scanCallback(callbackData)
+    -- scanData is itemLink ID, stemming from ItemUpgrades and randomized gear
+    -- Trade Goods are all static, so we use itemId
+    -- TODO don't overwrite all data, keep per itemId, now that querying instead of scanning
+
+    -- No shopping list so nothing to compare against
+    if not session.shoppingList then return end
+    -- [itemLink] = { count = 123, price = 23 }
+    session.buyList = {}
+
+    print("Checking", session.shoppingList.displayName,
+          "against latest scan data")
+    local foundCount, maxPrice, buyoutData, priceTable
+    for _, item in ipairs(session.shoppingList.items) do
+
+        -- First, make sure there's enough within range to satisfy order
+        foundCount = 0
+        maxPrice = addon.Round(item.scannedPrice * (item.priceThreshold or 1.2),
+                               0)
+
+        if not (item.name and item.itemLink) then
+            -- itemName, itemLink, _, _, _, _, _, _, _, itemTexture,
+            item.name, item.itemLink, _, _, _, _, _, _, _, item.itemTexture =
+                GetItemInfo(item.itemId)
+        end
+        -- TODO handle if item.name lookup fails again
+        session.buyList[item.name] = {}
+
+        -- Look through scanned data to ensure count under maxPrice
+        if item.itemLink and callbackData[item.itemLink] and
+            callbackData[item.itemLink].buyoutData then
+            buyoutData = callbackData[item.itemLink].buyoutData
+        else
+            buyoutData = {}
+        end
+
+        -- TODO optimize sorting logic
+        -- Insert keys into table, then sort table
+        priceTable = {}
+        for price, _ in pairs(buyoutData) do tinsert(priceTable, price) end
+        tsort(priceTable)
+
+        print("Checking for", item.itemLink, "maxPrice", maxPrice, "count",
+              item.count)
+        for _, price in pairs(priceTable) do
+            -- Since this is marketFlips, look past what list needs
+            if price < maxPrice then
+                -- Use table to preserve price order
+                tinsert(session.buyList[item.name],
+                        {price = price, count = buyoutData[price]})
+
+                foundCount = foundCount + item.count
+            end
+            -- print("price", price, "count", buyoutData[price])
+
+        end
+
+        if foundCount >= item.count then
+            print("Found enough for", item.name)
+        else
+            print("Error, not enough items available for shoppingList")
+        end
+    end
+end
+
+function addon.auctionHouse.shoppingList.Test()
+    if isEmpty(session.shoppingList) then
+        addon.auctionHouse.shoppingList.LoadList(
+            [[#expansion classic
+--#displayName Foo - Defias Pillager
+#faction Horde
+#realm Defias Pillager
+
+item --Linen Cloth
+  .itemId 2589
+  .scannedPrice 16
+  .priceThreshold 1.2
+  .count 12
+
+item --Light Leather
+  .itemId 2318
+  .scannedPrice 32
+  .priceThreshold 1.5
+  .count 23
+
+item --Rough Stone
+  .itemId 2835
+  .scannedPrice 4
+  .priceThreshold 1.5
+  .count 14
+
+item --Strange Dust
+  .itemId 10940
+  .scannedPrice 100
+  .priceThreshold 1.3
+  .count 9
+
+item --Copper Ore
+  .itemId 2770
+  .scannedPrice 600
+  .priceThreshold 1.3
+  .count 3
+]])
+    end
+
+    addon.auctionHouse.shoppingList:DisplayList()
 end

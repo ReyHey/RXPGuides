@@ -2278,7 +2278,7 @@ function addon.settings:CreateAceOptionsPanel()
                         width = "full",
                         order = 6.0,
                         hidden = function()
-                            return not addon.marketFlips or
+                            return not addon.auctionHouse or
                                        not self.profile.enableBetaFeatures
                         end
                     },
@@ -2289,12 +2289,12 @@ function addon.settings:CreateAceOptionsPanel()
                         width = optionsWidth,
                         order = 6.1,
                         hidden = function()
-                            return not addon.marketFlips or
+                            return not addon.auctionHouse or
                                        not self.profile.enableBetaFeatures
                         end,
                         set = function(info, value)
                             SetProfileOption(info, value)
-                            addon.marketFlips:Setup()
+                            addon.auctionHouse.shoppingList:Setup():Setup()
                         end
                     }
                 }

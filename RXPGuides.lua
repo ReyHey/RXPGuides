@@ -1060,9 +1060,6 @@ function addon:OnInitialize()
     if addon.itemUpgrades then
         addon.itemUpgrades:Setup()
     end
-    if addon.marketFlips then
-        addon.marketFlips:Setup()
-    end
     if addon.auctionHouse then
         addon.auctionHouse:Setup()
     end
