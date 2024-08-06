@@ -1021,7 +1021,7 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "header",
                         width = "full",
                         order = 4.8,
-                        hidden = not addon.inventoryManager
+                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
                     },
                     showJunkIcon = {
                         name = L("Show junk item indicator"), -- TODO locale
@@ -1030,7 +1030,7 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "toggle",
                         width = optionsWidth * 1.5,
                         order = 4.81,
-                        hidden = not addon.inventoryManager
+                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
                     },
                     autoDiscardItems = {
                         name = L("Discard junk items if bag is full"), -- TODO locale
@@ -1039,7 +1039,7 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "toggle",
                         width = optionsWidth * 1.5,
                         order = 4.83,
-                        hidden = not addon.inventoryManager
+                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
                     },
                     rightClickJunk = {
                         name = L("Toggle junk with modified right click"), -- TODO locale
@@ -1048,7 +1048,7 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "toggle",
                         width = optionsWidth * 1.5,
                         order = 4.84,
-                        hidden = not addon.inventoryManager
+                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
                     },
                     rightClickMod = {
                         name = L("Right Click Modifier"), -- TODO locale
@@ -1061,8 +1061,12 @@ function addon.settings:CreateAceOptionsPanel()
                         disabled = function()
                             return not self.profile.rightClickJunk
                         end,
-                        values = {[1] = "CTRL", [2] = "ALT", [3] = "CTRL+ALT"},
-                        hidden = not addon.inventoryManager
+                        values = {
+                            [1] = "CTRL",
+                            [2] = "ALT",
+                            [3] = "CTRL+ALT",
+                        },
+                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
                     },
                     autoSellJunk = {
                         name = L("Auto Sell Junk"), -- TODO locale
@@ -1071,7 +1075,7 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "toggle",
                         width = optionsWidth * 1.5,
                         order = 4.86,
-                        hidden = not addon.inventoryManager
+                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
                     },
                     sellKeybind = {
                         name = L("Delete Cheapest Junk Item Keybind"), -- TODO locale
@@ -1079,7 +1083,7 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "keybinding",
                         width = optionsWidth * 1.25,
                         order = 4.87,
-                        hidden = not addon.inventoryManager,
+                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
                         get = function()
                             local commandName =
                                 "CLICK RXPInventory_DeleteJunk:LeftButton"
@@ -1196,8 +1200,20 @@ function addon.settings:CreateAceOptionsPanel()
                         order = 1.0
                     },
                     enableAutomaticXpRate = {
-                        name = L("Detect Rate"),
-                        desc = L("Checks for heirlooms and experience buffs"),
+                        name = function()
+                            if addon.game == "CLASSIC" then
+                                return L("Detect Season")
+                            else
+                                return L("Detect Rate")
+                            end
+                        end,
+                        desc = function()
+                            if addon.game == "CLASSIC" then
+                                return L("Auto detects seasonal buffs and adjust the routes accordingly")
+                            else
+                                return L("Checks for heirlooms and experience buffs")
+                            end
+                        end,
                         type = "toggle",
                         width = optionsWidth,
                         order = 1.1,
@@ -1375,12 +1391,8 @@ function addon.settings:CreateAceOptionsPanel()
                         desc = L(
                             "Adjust the leveling routes to the current season"),
                         type = "select",
-                        values = {
-                            [false] = L "None",
-                            [1] = L "Season of Mastery",
-                            [2] = L "Season of Discovery"
-                        },
-                        -- sorting = {0, 1, 2},
+                        values = {[0] = L"None", [1] = L"Season of Mastery", [2] = L"Season of Discovery"},
+                        --sorting = {0, 1, 2},
                         width = optionsWidth,
                         order = 2.5,
                         set = function(info, value)
@@ -3350,9 +3362,7 @@ function addon.settings:DetectXPRate(softUpdate)
     if not addon.settings.profile.enableAutomaticXpRate then
         return
     elseif addon.gameVersion < 20000 then
-        local season = (C_Seasons and C_Seasons.HasActiveSeason() and
-                           C_Seasons.GetActiveSeason()) or CheckBuff(362859) and
-                           1
+        local season = addon.GetSeason() or CheckBuff(362859) and 1
 
         if season == addon.settings.profile.season then return end
 

@@ -7,6 +7,7 @@ if faction == "Horde" then return end
 RXPGuides.RegisterGuide([[
 #xprate <1.5
 #classic
+#season 0,1
 #version 1
 << Alliance
 #name 13-15 Westfall
@@ -791,17 +792,15 @@ step
 
 RXPGuides.RegisterGuide([[
 #classic
+#season 0,1
 #version 1
 << Alliance
 #group RestedXP Alliance 1-20
 #name 14-16 Darkshore
-#displayname 11-16 Darkshore << NightElf !SoD
-#displayname 13-16 Darkshore << !NightElf !SoD
-#displayname 13-20 Darkshore << NightElf SoD !Priest
-#displayname 13-22 Darkshore << NightElf SoD Priest
-#displayname 15-18 Darkshore << !NightElf SoD
-#next 16-19 Darkshore << !sod/Warrior/Rogue/Druid/Hunter/Paladin/Mage/Warlock/!NightElf Priest
-#next 22-24 Wetlands SoD << sod NightElf Priest
+#displayname 11-16 Darkshore << NightElf
+#displayname 15-16 Darkshore << !NightElf
+#next 16-19 Darkshore
+
 
 -- #displayname 11-16 Darkshore << NightElf/Dwarf Hunter !SoD
 -- #displayname 15-17 Darkshore << !NightElf !Dwarf/!Hunter !SoD
@@ -999,7 +998,7 @@ step << Warlock/Mage
     .collect 223147,1 << Mage --Spell Notes: Balefire Bolt
     .itemcount 220792,1 << Mage --Skips if you don't have a Scroll of Spatial Mending
     .use 223148 << Warlock --Otherworldy Treasure
-    .use 220792 << Mage 
+    .use 220792 << Mage
     .train 429311,1 << Mage
     .train 431756,1 << Warlock
     .train 1120,3 << Warlock --Skips if you don't have drain soul
@@ -1693,7 +1692,7 @@ step << Druid
 step << !Warrior !Rogue
     #season 2
     .goto 1439/1,-33.200,6141.300,20 >> Head to the nearby cave
-step << !Warrior !Rogue
+step << skip --logout skip !Warrior !Rogue
     #optional
     #label OracleLS
     #completewith AsterionTravelSoD
@@ -1702,7 +1701,7 @@ step << !Warrior !Rogue
     .goto 1439,41.705,36.507,20 >>|cRXP_WARN_Kill the Moonkin Oracle inside and jump on top of the large mushroom at the back of the cave, then perform a Logout Skip by logging out and back in|r
 
 
-----Start of SoD Druid Starsurge segment----    
+----Start of SoD Druid Starsurge segment----
 
 step << Druid
     #optional
@@ -1882,10 +1881,10 @@ step << Druid
     .turnin 4812 >> Turn in As Water Cascades
     .accept 4813 >> Accept The Fragments Within
     .isQuestTurnedIn 4811
-step << Druid
+step << skip --logout skip Druid
     #season 2
     .goto 1439/1,-33.200,6141.300,20 >> Head to the nearby cave
-step << Druid
+step << skip --logout skip Druid
     #optional
     #label OracleLS
     #completewith AsterionTravelSoD
@@ -2110,7 +2109,7 @@ step << !Warrior !Rogue
     .goto Darkshore,55.04,33.34
     .complete 947,2 --Death Cap (1)
     .goto Darkshore,55.38,36.34
-step << !Warrior !Rogue
+step << skip --logout skip !Warrior !Rogue
     #optional
     #label MushroomLSSoD
     #completewith CavetoAuberSoD
@@ -2191,10 +2190,10 @@ step << Warrior/Rogue
     >>Travel up to the |cRXP_PICK_Mysterious Red Crystal|r
     >>|cRXP_WARN_Be careful of the two group of 2 |cRXP_ENEMY_Raging Moonkins|r west of the |cRXP_PICK_Mysterious Red Crystal|r as the duos closest to each other are leashed together|r
     .complete 4811,1 --Locate the large, red crystal on Darkshore's eastern mountain range
-step << Warrior/Rogue
+step << skip --logout skipWarrior/Rogue
     #season 2
     .goto 1439/1,-33.200,6141.300,20 >> Head to the nearby cave
-step << Warrior/Rogue
+step << skip --logout skip Warrior/Rogue
     #completewith next
     #season 2
     .goto 1439/1,-79.100,6134.300
@@ -2387,11 +2386,11 @@ step << !Druid sod
     .turnin 4812 >> Turn in As Water Cascades
     .accept 4813 >> Accept The Fragments Within
     .isQuestTurnedIn 4811
-step
+step << skip --logout skip
     #season 2 << Hunter
     #season 1 << Druid/Warrior/Rogue/Priest
     .goto 1439/1,-33.200,6141.300,20 >> Head to the nearby cave
-step
+step << skip --logout skip
     #optional
     #label OracleLSTwo
     #completewith MysteriousCrystalHuntDruidEnd
@@ -2724,7 +2723,7 @@ step << !sod/Warrior/Rogue/Priest
     .waypoint 1439,43.104,62.563,50,0
     .waypoint 1439,42.794,62.166,50,0
     .waypoint 1439,42.489,60.677,50,0 --Middle spawn
-    >>Kill |cRXP_ENEMY_Anaya Dawnrunner|r. Loot her for her |cRXP_LOOT_Pendant|r 
+    >>Kill |cRXP_ENEMY_Anaya Dawnrunner|r. Loot her for her |cRXP_LOOT_Pendant|r
     >>|cRXP_WARN_Be aware that she has a 7-8 minute spawn time and 4 different spawnpoints across Ameth'Aran|r
     >>|cRXP_WARN_If you can't find her and want to try again later at the cost of potentially grinding more mobs soon, skip this step|r
     .complete 963,1 --Anaya's Pendant (1)
@@ -3175,7 +3174,7 @@ step << Priest
     .turnin 966 >> Turn in The Tower of Althalaxx
     .accept 967 >> Accept The Tower of Althalaxx
     .target Balthule Shadowstrike
-step << Priest
+step << skip --logout skip Priest
     #season 2
     #loop
     .goto 1439,55.231,26.508,0
@@ -3746,7 +3745,7 @@ step << NightElf !Druid
     #season 0
     .deathskip >> Die and respawn at the |cRXP_FRIENDLY_Spirit Healer|r
     .target Spirit Healer
-step
+step << skip --logout skip
     #hardcore << NightElf !Druid
     #optional
     #label MushroomLS
@@ -3754,7 +3753,7 @@ step
     #season 0
     .goto 1439,54.964,34.536
     .goto 1439,41.705,36.507,20 >>|cRXP_WARN_Jump on top of the rock on the top floor inside the cave. Position your character until it looks like they're floating, then perform a Logout Skip by logging out and back in|r
-step << Warrior/Rogue
+step << skip --logout skip << Warrior/Rogue
     #optional
     #label MushroomLS
     #completewith CavetoAuber
@@ -3986,10 +3985,10 @@ step << !Priest
     .complete 2138,1 -- Rabid Thistle Bear slain (20)
     .mob Rabid Thistle Bear
 step
-    #season 2   
+    #season 2
     #completewith OnuSoD
     .goto 1439,43.555,76.293,80 >> Travel to the Grove of the Ancients
-step    
+step
     #season 2
     #label OnuSoD
     .goto 1439,43.555,76.293
@@ -4178,25 +4177,25 @@ step << Priest
     .turnin 950 >> Turn in Return to Onu
     .target Onu
 step << Priest
-    #season2
+    #season 2
     .goto 1439,44.401,76.425
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Kerlonian Evershade|r to start the escort
     >>|cRXP_WARN_Skip this step if he is not there. It can take up to 25 minutes for him to respawn|r
     .accept 5321 >> Accept The Sleeper Has Awakened
     .target Kerlonian Evershade
 step << Priest
-    #season2
+    #season 2
     .isOnQuest 5321
     .goto Darkshore,44.38,76.30
     >>Open |cRXP_PICK_Kerlonian's Chest|r. Loot it for the |T134229:0|t[|cRXP_LOOT_Horn of Awakening|r]
     .complete 5321,1 -- Horn of Awakening (1)
 step << Priest
-    #season2
+    #season 2
     #completewith towersod
     .zone Ashenvale >> Travel south to Ashenvale
     .goto Ashenvale,29.7,13.6
 step << Priest
-    #season2
+    #season 2
     .goto Ashenvale,27.26,35.58
     >>|cRXP_WARN_Escort |cRXP_FRIENDLY_Kerlonian|r to Maestra's Post in Ashenvale|r
     .use 13536 >> |cRXP_WARN_Use the|r |T134229:0|t[|cRXP_LOOT_Horn of Awakening|r] |cRXP_WARN_whenever |cRXP_FRIENDLY_Kerlonian|r falls asleep next to him|r
@@ -4204,14 +4203,14 @@ step << Priest
     .complete 5321,2
     .isOnQuest 5321
 step << Priest
-    #season2
+    #season 2
 	>>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Liadris Moonriver|r
 	.target Liladris Moonriver
     .goto Ashenvale,27.26,35.58
     >>Skip this step if you haven't completed the quest
     .turnin 5321 >> Turn in The Sleeper Has Awakened
 step << Priest
-    #season2
+    #season 2
     #label towersod
 	>>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Delgren the Purifier|r
 	.target Delgren the Purifier
@@ -4412,7 +4411,7 @@ step << Warrior
     .collect 928,1
     .target Ariyell Skyshadow
     .money <0.9860
-    .itemStat 16,ITEM_MOD_DAMAGE_PER_SECOND_SHORT,<15.16 
+    .itemStat 16,ITEM_MOD_DAMAGE_PER_SECOND_SHORT,<15.16
 step << Warrior
     #season 2
     #completewith next
@@ -4473,7 +4472,7 @@ step << Rogue
     .collect 2209,2
     .target Ariyell Skyshadow
     .money <0.9860
-    .itemStat 16,ITEM_MOD_DAMAGE_PER_SECOND_SHORT,<10.93 
+    .itemStat 16,ITEM_MOD_DAMAGE_PER_SECOND_SHORT,<10.93
     .isQuestComplete 741
 step << Rogue
     #season 2
@@ -4501,7 +4500,7 @@ step << Priest
     #season 2
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Maethra Slagheart|r
     .turnin 78192 >> Turn in Secrets of the Light
-    .accept 78193 >> Accept Secrets of the Light 
+    .accept 78193 >> Accept Secrets of the Light
     .target Maethra Slagheart
 step << Warrior/Rogue
     #season 2
@@ -4683,8 +4682,8 @@ step << Druid
     #optional
     .hs >> Hearth to Darkshore
     .zoneskip Darkshore
-    
-    
+
+
 ----End of Druid Quest+SoD rune section----
 
 
@@ -4708,8 +4707,8 @@ step << Priest
     .zoneskip Westfall
     .dungeon !DM
 
-    
-----End of SoD 250% xp buff early southern Darkshore one loop----    
+
+----End of SoD 250% xp buff early southern Darkshore one loop----
 
 
 step
@@ -4952,6 +4951,7 @@ step << Druid
 
 RXPGuides.RegisterGuide([[
 #classic
+#season 0,1
 #version 1
 << Alliance
 << !sod/Warrior/Rogue/Hunter/Druid/Paladin/Mage/Warlock/!NightElf Priest
@@ -5703,7 +5703,7 @@ step << Warrior
     >>|cRXP_WARN_Be aware of the |cRXP_ENEMY_Thistle Cubs|r which can stun you for 2 seconds|r
     .complete 2139,1 --Den Mother (1)
     .mob Den Mother
-step << Warrior
+step << skip --logout skip << Warrior
     #season 2
     .goto Darkshore,51.48,38.43
     .goto 1439,41.705,36.507,20 >>|cRXP_WARN_Jump on top of the mushroom at the back of Den Mother's cave and perform a logout skip by logging out on top of it|r
@@ -6107,7 +6107,7 @@ step << !Warrior
     #completewith BlackwoodSod
     .hs >> Hearth to Auberdine
     .subzoneskip 442
-step << !Druid !Warrior
+step << skip --logout skip !Druid !Warrior
     #optional
     #season 2
     #completewith next
@@ -6216,20 +6216,20 @@ step << Warrior
     .turnin 950 >> Turn in Return to Onu
     .target Onu
 step << Warrior
-    #season2
+    #season 2
     .goto 1439,44.401,76.425
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Kerlonian Evershade|r to start the escort
     >>|cRXP_WARN_Skip this step if he is not there. It can take up to 25 minutes for him to respawn|r
     .accept 5321 >> Accept The Sleeper Has Awakened
     .target Kerlonian Evershade
 step << Warrior
-    #season2
+    #season 2
     .isOnQuest 5321
     .goto Darkshore,44.38,76.30
     >>Open |cRXP_PICK_Kerlonian's Chest|r. Loot it for the |T134229:0|t[|cRXP_LOOT_Horn of Awakening|r]
     .complete 5321,1 -- Horn of Awakening (1)
 step << Warrior
-    #season2
+    #season 2
     #sticky
     >>|cRXP_WARN_Escort |cRXP_FRIENDLY_Kerlonian|r to Maestra's Post in Ashenvale|r
     .use 13536 >> |cRXP_WARN_Use the|r |T134229:0|t[|cRXP_LOOT_Horn of Awakening|r] |cRXP_WARN_whenever |cRXP_FRIENDLY_Kerlonian|r falls asleep next to him|r
@@ -6249,7 +6249,7 @@ step << Warrior
     >>|cRXP_WARN_Don't forget to keep waking|r |cRXP_FRIENDLY_Kerlonian|r |cRXP_WARN_while doing this quest. He will help you with the mobs|r
     .complete 5713,1
 step << Warrior
-    #season2
+    #season 2
     #completewith towersod
     .zone Ashenvale >> Travel south to Ashenvale
     .goto Ashenvale,29.7,13.6
@@ -6260,14 +6260,14 @@ step << Warrior
     .turnin 5713,1 >> Turn in One Shot. One Kill.
     .target Sentinel Onaeya
 step << Warrior
-    #season2
+    #season 2
 	>>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Liadris Moonriver|r
 	.target Liladris Moonriver
     .goto Ashenvale,27.26,35.58
     >>Skip this step if you haven't completed the quest
     .turnin 5321 >> Turn in The Sleeper Has Awakened
 step << Warrior
-    #season2
+    #season 2
     #label towersod
 	>>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Delgren the Purifier|r
 	.target Delgren the Purifier
@@ -6332,25 +6332,25 @@ step << Druid
     .turnin 950 >> Turn in Return to Onu
     .target Onu
 step << Druid
-    #season2
+    #season 2
     .goto 1439,44.401,76.425
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Kerlonian Evershade|r to start the escort
     >>|cRXP_WARN_Skip this step if he is not there. It can take up to 25 minutes for him to respawn|r
     .accept 5321 >> Accept The Sleeper Has Awakened
     .target Kerlonian Evershade
 step << Druid
-#season2
+#season 
     .isOnQuest 5321
     .goto Darkshore,44.38,76.30
     >>Open |cRXP_PICK_Kerlonian's Chest|r. Loot it for the |T134229:0|t[|cRXP_LOOT_Horn of Awakening|r]
     .complete 5321,1 -- Horn of Awakening (1)
 step << Druid
-#season2
+#season 
     #completewith towersod
     .zone Ashenvale >> Travel south to Ashenvale
     .goto Ashenvale,29.7,13.6
 step << Druid
-#season2
+#season 
     .goto Ashenvale,27.26,35.58
     >>|cRXP_WARN_Escort |cRXP_FRIENDLY_Kerlonian|r to Maestra's Post in Ashenvale|r
     .use 13536 >> |cRXP_WARN_Use the|r |T134229:0|t[|cRXP_LOOT_Horn of Awakening|r] |cRXP_WARN_whenever |cRXP_FRIENDLY_Kerlonian|r falls asleep next to him|r
@@ -6358,14 +6358,14 @@ step << Druid
     .complete 5321,2
     .isOnQuest 5321
 step << Druid
-#season2
+#season 
 	>>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Liadris Moonriver|r
 	.target Liladris Moonriver
     .goto Ashenvale,27.26,35.58
     .turnin 5321 >> Turn in The Sleeper Has Awakened
     .isQuestComplete 5321
 step << Druid
-#season2
+#season 
     #label towersod
 	>>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Delgren the Purifier|r
 	.target Delgren the Purifier
@@ -6416,7 +6416,7 @@ step << Druid
     .train 410021 >> |cRXP_WARN_Use the|r |T134233:0|t[|cRXP_FRIENDLY_Idol of the Wild|r] |cRXP_WARN_to train|r |T132143:0|t[Wild Strikes]
     .itemcount 210534,1
 step << Druid
-    #season2
+    #season 2
     #optional
 	#completewith next
 	.cast 18960 >> Cast Teleport: Moonglade
@@ -6931,7 +6931,7 @@ step << Paladin
     .target Brandur Ironhammer
     .zoneskip Darkshore
     .dungeon !DM
-step << Mage
+step << skip --logout skip Mage
     #xprate >1.59
     #optional
     #completewith DeeprunNoDM
@@ -6953,7 +6953,7 @@ step << Warlock/Rogue
     .isQuestTurnedIn 968
     .train 202,1 << Warrior --2h swords not trained
     .dungeon !DM
-step << Warlock/Rogue
+step << skip --logout skip Warlock/Rogue
     #xprate >1.59
     #optional
     #completewith DeeprunNoDM
@@ -6966,7 +6966,7 @@ step << Warlock/Rogue
     .isQuestTurnedIn 968
     .train 202,1 << Warrior --2h swords not trained
     .dungeon !DM
-step << Warlock/Rogue
+step << skip --logout skip Warlock/Rogue
     #xprate >1.59
     #optional
     #completewith DeeprunNoDM
@@ -8256,7 +8256,7 @@ step << NightElf
     .itemStat 15,QUALITY,<7
 
 ----Start of Hunter Deadmines/All 2x Deadmines Section----
-step 
+step
     #xprate <1.59 << !Hunter
     #label TravelMenethilDMBoat
     #completewith MenethilDMBoat
@@ -8643,7 +8643,7 @@ step << Priest
     .zoneskip Stormwind City
     .zoneskip Westfall
     .dungeon DM
-step << Mage/Priest
+step << skip --logout skip Mage/Priest
     #xprate >1.59
     #optional
     #requires MilstaffDM << Mage
@@ -8683,7 +8683,7 @@ step << skip --Warlock
     .zoneskip Stormwind City
     .zoneskip Westfall
     .dungeon DM
-step << skip --Warlock
+step << skip --logout skip skip --Warlock
     #xprate >1.59
     #optional
     #completewith DeeprunDM
@@ -8704,7 +8704,7 @@ step << !Mage !Priest
     .zoneskip Westfall
     .isQuestTurnedIn 968
     .dungeon DM
-step << !Mage !Priest
+step << skip --logout skip !Mage !Priest
     #xprate >1.59 << !Hunter
     #completewith DeeprunDM
     #optional
@@ -8728,7 +8728,7 @@ step << skip --NightElf Hunter/NightElf Warrior
     .zoneskip Westfall
     .isQuestAvailable 968
     .dungeon DM
-step << !Mage !Priest
+step << skip --logout skip !Mage !Priest
     #xprate >1.59 << !Hunter
     #completewith DeeprunDM
     #optional
@@ -10495,7 +10495,7 @@ step << !Hunter NightElf
     >>Kill |cRXP_ENEMY_Young Wetlands Crocolisks|r. Loot them for their |cRXP_LOOT_Young Crocolisk Skin|r
     .complete 484,1
     .mob Young Wetlands Crocolisk
-step << !Hunter NightElf
+step << skip --logout skip !Hunter NightElf
     #xprate 1.49-1.59
 	#completewith next
 	.goto Wetlands,63.9,78.6
@@ -10549,6 +10549,10 @@ step << !Hunter NightElf
     .zoneskip Dun Morogh
 step << !Hunter NightElf
     #xprate <1.59
+    .goto Dun Morogh,55.13,34.91
+    .zone Ironforge >> Travel to Ironforge
+step << skip --logout skip !Hunter NightElf
+    #xprate <1.59
     .goto Dun Morogh,70.66,56.70,40,0
     .goto Dun Morogh,70.60,54.87
     .zone Ironforge >>Head to the trogg cave west and log out on top of the drilling machine near the entrance to perform a logout skip, that will teleport you to Ironforge
@@ -10566,7 +10570,7 @@ step << !Hunter NightElf
 
 
 
-step << !Hunter
+step << skip --logout skip !Hunter
     #xprate <1.59
     #completewith next
     #optional
@@ -10606,6 +10610,7 @@ step << !Hunter
 RXPGuides.RegisterGuide([[
 #xprate <1.59
 #classic
+#season 0,1
 #version 1
 << Alliance !Hunter
 #group RestedXP Alliance 1-20
@@ -12249,6 +12254,7 @@ step
 
 RXPGuides.RegisterGuide([[
 #classic
+#season 0,1
 #version 1
 #season 0
 << Alliance Hunter
@@ -12901,6 +12907,7 @@ step << Dwarf Hunter
 
 RXPGuides.RegisterGuide([[
 #classic
+#season 0,1
 #version 1
 << Alliance !Hunter
 #season 0
