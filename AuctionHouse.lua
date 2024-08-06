@@ -348,7 +348,7 @@ function addon.auctionHouse.shoppingList:CreateGui(attachment)
     if session.shoppingListUI then return end
     if not attachment then return end
 
-    session.shoppingListUI = _G["RXP_IU_AH_ShoppingList_Frame"]
+    session.shoppingListUI = _G["RXP_IU_AH_ShoppingList_SideBar"]
     if not session.shoppingListUI then return end
 
     session.shoppingListUI:SetParent(attachment)
@@ -357,8 +357,10 @@ function addon.auctionHouse.shoppingList:CreateGui(attachment)
 
     -- fmt("%s - %s", addon.title, L('Shopping List'))
     _G.RXP_IU_AH_ShoppingList_Title:SetText(L('Shopping List'))
+    session.shoppingListUI.ImportButton:SetText(L('Import'))
 
-    -- session.shoppingListUI.ScrollBox.ScrollBar:SetHideIfUnscrollable(true)
+    -- Using a scrollbox for ease of use, but not actually for scrolling
+    session.shoppingListUI.ScrollBox.ScrollBar:SetHideIfUnscrollable(true)
 
     local DataProvider = CreateDataProvider()
     local ScrollView = CreateScrollBoxListLinearView()
@@ -439,9 +441,12 @@ function addon.auctionHouse.shoppingList.LoadList(text)
 
     -- Only mandatory field is .items, the rest are optional
 
-    if not list or isEmpty(list.items) then return end
+    if not list or isEmpty(list.items) then
+        addon.comms.PrettyPrint('%s %s', L('Shopping List'), L('Invalid Data'))
+        return
+    end
 
-    -- TODO if bad list imported, should the existing one be preserved?
+    -- TODO convert to RXPCData
     session.shoppingList = list
     session.buyList = {}
 
