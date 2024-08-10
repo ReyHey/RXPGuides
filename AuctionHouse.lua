@@ -310,14 +310,13 @@ function addon.auctionHouse.shoppingList:Setup()
 
     if not addon.settings.profile.enableBetaFeatures then return end
 
-    session.shoppingList = {}
+    RXPCData.shoppingList = RXPCData.shoppingList or {}
     session.buyList = {}
     session.clickedListRow = nil
-    RXPD = session
-
 end
 
 local function getColorizedName(itemLink, itemName)
+    if not (itemLink and itemName) then return end
     local quality = C_Item.GetItemQualityByID(itemLink)
     local h = ITEM_QUALITY_COLORS[quality].hex
 
@@ -377,7 +376,7 @@ function addon.auctionHouse.shoppingList:CreateGui(attachment)
     -- Triggers when clicking on tabs or using _G.AuctionFrameTab1:Click()
     hooksecurefunc(_G, "AuctionFrameTab_OnClick", function(button, ...)
         -- No shopping list, so don't do anything
-        if isEmpty(session.shoppingList) then return end
+        if isEmpty(RXPCData.shoppingList) then return end
 
         -- Show sidebar only if RXPGuides tab selected
         if button.isRXP and session.shoppingListUI then
@@ -429,9 +428,9 @@ function addon.auctionHouse.shoppingList:DisplayList()
 
     session.shoppingListUI.DataProvider:Flush()
 
-    if not session.shoppingList.items then return end
+    if not RXPCData.shoppingList.items then return end
 
-    for _, data in ipairs(session.shoppingList.items) do
+    for _, data in ipairs(RXPCData.shoppingList.items) do
         session.shoppingListUI.DataProvider:Insert(data)
     end
 end
@@ -446,8 +445,7 @@ function addon.auctionHouse.shoppingList.LoadList(text)
         return
     end
 
-    -- TODO convert to RXPCData
-    session.shoppingList = list
+    RXPCData.shoppingList = list
     session.buyList = {}
 
     addon.auctionHouse.shoppingList:DisplayList()
@@ -568,14 +566,14 @@ function addon.auctionHouse.shoppingList.scanCallback(callbackData)
     print("scanCallback")
     -- TODO cache callbackData?
     -- No shopping list so nothing to compare against
-    if not session.shoppingList then return end
+    if not RXPCData.shoppingList then return end
     -- [itemLink] = { count = 123, price = 23 }
     session.buyList = {}
 
-    print("Checking", session.shoppingList.displayName,
+    print("Checking", RXPCData.shoppingList.displayName,
           "against latest scan data")
     local foundCount, maxPrice, buyoutData, priceTable
-    for _, item in ipairs(session.shoppingList.items) do
+    for _, item in ipairs(RXPCData.shoppingList.items) do
 
         -- First, make sure there's enough within range to satisfy order
         foundCount = 0
@@ -630,7 +628,7 @@ function addon.auctionHouse.shoppingList.scanCallback(callbackData)
 end
 
 function addon.auctionHouse.shoppingList.Test()
-    if isEmpty(session.shoppingList) then
+    if isEmpty(RXPCData.shoppingList) then
         addon.auctionHouse.shoppingList.LoadList(
             [[#expansion classic
 --#displayName Foo - Defias Pillager
