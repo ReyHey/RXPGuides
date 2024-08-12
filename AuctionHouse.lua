@@ -130,6 +130,7 @@ function addon.auctionHouse:FindItemAuction(itemData, recursive)
             GetAuctionItemInfo("list", i)
         -- print("Evaluating", i, itemLink, buyoutPrice)
 
+        -- TODO enable, remove 'and false'
         if itemID == itemData.ItemID and itemLink == itemData.ItemLink and
             buyoutPrice == itemData.BuyoutMoney and false then
             SetSelectedAuctionItem("list", i)
@@ -342,12 +343,37 @@ local function Initializer(row, data)
     end
 
     if data.count then
-        row.Status:SetText(fmt("(??/%d)", data.count))
+        row.Status:SetText(fmt("(%d/%d)", data.haveCount or 0, data.count))
     else -- count nil for MarketFlips, just buy as much as you want/can/care
         row.Status:SetText('')
     end
 
     row:Show()
+end
+-- TODO re-calculate haveCount on scanning bags, bank, and check if mail exists
+-- Hooked for PlaceAuctionBid
+function addon.auctionHouse.shoppingList.PlacedAuctionBid(aType, aIndex, bid)
+    local buyoutPrice, itemId, count
+
+    local itemLink = GetAuctionItemLink(aType, aIndex)
+
+    -- name, texture, count, quality, canUse, level, levelColHeader, minBid, minIncrement, buyoutPrice, bidAmount, highBidder, bidderFullName, owner, ownerFullName, saleStatus, itemId, hasAllInfo = GetAuctionItemInfo(type, index)
+    _, _, count, _, _, _, _, _, _, buyoutPrice, _, _, _, _, _, _, itemId, _ =
+        GetAuctionItemInfo(aType, aIndex)
+
+    if not RXPCData.shoppingList then return end
+
+    -- RXPCData.shoppingList.items is an array, so need to inefficiently look
+    -- TODO reverse lookup by itemID?
+    for _, data in ipairs(RXPCData.shoppingList.items or {}) do
+        if data.itemId == itemId then
+            -- print("PlacedAuctionBid", itemId, data.haveCount or 0, count)
+            data.haveCount = (data.haveCount or 0) + count
+
+            addon.auctionHouse.shoppingList:DisplayList()
+            return
+        end
+    end
 end
 
 -- Executed when AuctionFrame opens
@@ -412,6 +438,9 @@ function addon.auctionHouse.shoppingList:CreateGui(attachment)
             end
         end)
     end
+
+    hooksecurefunc("PlaceAuctionBid",
+                   addon.auctionHouse.shoppingList.PlacedAuctionBid)
 
     addon.auctionHouse.shoppingList:DisplayList()
 end
@@ -581,6 +610,7 @@ addon.auctionHouse.shoppingList.functions.count = addon.auctionHouse
                                                       .shoppingList.functions
                                                       .number
 
+-- Only used for obsolete/unused async scanning, not ShoppingList
 function addon.auctionHouse.shoppingList.scanCallback(callbackData)
     -- scanData is itemLink ID, stemming from ItemUpgrades and randomized gear
     -- Trade Goods are all static, so we use itemId
