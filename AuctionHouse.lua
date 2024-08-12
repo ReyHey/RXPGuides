@@ -50,8 +50,6 @@ function addon.auctionHouse:Setup()
     addon.auctionHouse.shoppingList:Setup()
 
     session.isInitialized = true
-    RXPD2 = session
-
 end
 
 function addon.auctionHouse:AUCTION_HOUSE_SHOW()
@@ -313,14 +311,20 @@ function addon.auctionHouse.shoppingList:Setup()
     RXPCData.shoppingList = RXPCData.shoppingList or {}
     session.buyList = {}
     session.clickedListRow = nil
+
+    self:CreateImportPanel()
 end
 
 local function getColorizedName(itemLink, itemName)
     if not (itemLink and itemName) then return end
     local quality = C_Item.GetItemQualityByID(itemLink)
-    local h = ITEM_QUALITY_COLORS[quality].hex
+    if quality then
+        local h = ITEM_QUALITY_COLORS[quality].hex
 
-    return h .. itemName .. '|r'
+        return h .. itemName .. '|r'
+    end
+
+    return itemName
 end
 
 local function Initializer(row, data)
@@ -330,15 +334,20 @@ local function Initializer(row, data)
 
     -- Frame elements
     row.Name:SetText(getColorizedName(data.itemLink, data.name))
-    row.ItemFrame:SetNormalTexture(data.itemTexture)
+
+    if data.itemTexture then
+        row.ItemFrame:SetNormalTexture(data.itemTexture)
+    else
+        row.ItemFrame:SetNormalTexture('Interface/Icons/INV_Misc_QuestionMark')
+    end
 
     if data.count then
         row.Status:SetText(fmt("(??/%d)", data.count))
     else -- count nil for MarketFlips, just buy as much as you want/can/care
         row.Status:SetText('')
     end
-    row:Show()
 
+    row:Show()
 end
 
 -- Executed when AuctionFrame opens
@@ -376,7 +385,9 @@ function addon.auctionHouse.shoppingList:CreateGui(attachment)
     -- Triggers when clicking on tabs or using _G.AuctionFrameTab1:Click()
     hooksecurefunc(_G, "AuctionFrameTab_OnClick", function(button, ...)
         -- No shopping list, so don't do anything
-        if isEmpty(RXPCData.shoppingList) then return end
+        -- Import is only available when sidebar is shown currently
+        -- if isEmpty(RXPCData.shoppingList) then return end
+        if not addon.settings.profile.enableShoppingList then return end
 
         -- Show sidebar only if RXPGuides tab selected
         if button.isRXP and session.shoppingListUI then
@@ -428,10 +439,20 @@ function addon.auctionHouse.shoppingList:DisplayList()
 
     session.shoppingListUI.DataProvider:Flush()
 
-    if not RXPCData.shoppingList.items then return end
+    if not (RXPCData.shoppingList and RXPCData.shoppingList.items) then
+        return
+    end
 
-    for _, data in ipairs(RXPCData.shoppingList.items) do
-        session.shoppingListUI.DataProvider:Insert(data)
+    -- RXPD4 = {}
+    for _, data in ipairs(RXPCData.shoppingList.items or {}) do
+
+        -- Only insert fully queried items
+        if data.itemTexture and data.itemLink and data.name then
+            session.shoppingListUI.DataProvider:Insert(data)
+        else
+            -- tinsert(RXPD4, data)
+            addon.comms.PrettyPrint("Incomplete item %s", data.itemId)
+        end
     end
 end
 
@@ -529,7 +550,7 @@ function addon.auctionHouse.shoppingList.functions.itemId(itemId)
     if type(itemId) == "string" then -- on parse
         local id = tonumber(itemId)
         local lookupId = GetItemInfoInstant(itemId)
-        -- print("itemId", id, itemId, lookupId, id == lookupId)
+        print("itemId", id, itemId, lookupId, id == lookupId)
         -- Use this to check if itemId is valid
         return id == lookupId and id
     end
@@ -625,6 +646,73 @@ function addon.auctionHouse.shoppingList.scanCallback(callbackData)
             print("Error, not enough items available for shoppingList")
         end
     end
+end
+
+function addon.auctionHouse.shoppingList.Import(encodedText)
+    local decodedText = addon.read(encodedText)
+
+    if not decodedText then
+        if addon.settings.profile.debug then
+            addon.comms.PrettyPrint("Error Importing: " .. encodedText)
+        end
+        return
+    end
+
+    return addon.auctionHouse.shoppingList.LoadList(decodedText)
+end
+
+function addon.auctionHouse.shoppingList:CreateImportPanel()
+    local AceConfig = LibStub("AceConfig-3.0")
+
+    local importOptionsTable = {
+        type = "group",
+        name = fmt("%s - %s", L("Shopping List"), L('Import')),
+        handler = self,
+        args = {
+            buffer = {
+                order = 1,
+                name = L("Paste encoded strings"),
+                type = "description",
+                width = "full",
+                fontSize = "medium"
+            },
+            importBox = {
+                order = 10,
+                type = 'input',
+                name = L('Import'),
+                width = "full",
+                multiline = false,
+                validate = function(_, val) -- Use validate instead of set, to bypass resize-on-update
+                    if not addon.read(val) then
+                        return "Invalid encoding"
+                    end
+
+                    if addon.auctionHouse.shoppingList.Import(val) then
+                        return true
+                    end
+                end,
+                hidden = function() return not addon.auctionHouse end
+            },
+            clearList = {
+                order = 11,
+                type = 'execute',
+                name = _G.KEY_NUMLOCK_MAC,
+                disabled = function()
+                    return isEmpty(RXPCData.shoppingList)
+                end,
+                func = function()
+                    RXPCData.shoppingList = {}
+                    addon.auctionHouse.shoppingList:DisplayList()
+                end
+            }
+        }
+    }
+
+    AceConfig:RegisterOptionsTable(addon.RXPOptions.name ..
+                                       "/ShoppingListImport", importOptionsTable)
+
+    -- TODO add to Tips settings panel
+    -- self.importGui = AceConfigDialog:AddToBlizOptions(addon.RXPOptions.name .. "/ShoppingListImport",L("Import"), addon.RXPOptions.name)
 end
 
 function addon.auctionHouse.shoppingList.Test()

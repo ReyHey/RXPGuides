@@ -41,7 +41,7 @@ if not addon.settings.gui then
     addon.settings.gui = {selectedDeleteGuide = "", importStatusHistory = {}}
 end
 
-function addon.settings.OpenSettings(panelName)
+function addon.settings.OpenSettings(panelName, width, height)
     if not (_G.Settings and _G.Settings.GetCategory) then
         -- Not used by Era (1.15.0), Wrath (2.5.3), nor Retail (10.1.7)
         -- Support legacy generic fall through to base settings though
@@ -64,6 +64,21 @@ function addon.settings.OpenSettings(panelName)
             if not acdFrame.isHooked then
                 addon.settings.textboxHook()
                 acdFrame.isHooked = true
+            end
+
+            if width or height then
+                acdFrame:EnableResize(false)
+                -- acdFrame.statustext:GetParent():Hide()
+            end
+
+            if width then
+                acdFrame.width = width
+                acdFrame:SetWidth(width)
+            end
+
+            if height then
+                acdFrame.height = height
+                acdFrame:SetHeight(height)
             end
 
             -- Successfully opened sub menu
@@ -92,6 +107,8 @@ function addon.settings.ChatCommand(input)
         addon.settings.ToggleActive()
     elseif input == "bug" or input == "feedback" then
         addon.comms.OpenBugReport()
+    elseif input == "shoppinglist" then
+        addon.settings.OpenSettings('ShoppingListImport')
     elseif input == "help" then
         addon.comms.PrettyPrint(_G.HELP .. "\n" ..
                                     addon.help["What are command the line options?"])
@@ -1021,7 +1038,8 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "header",
                         width = "full",
                         order = 4.8,
-                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
+                        hidden = not (addon.inventoryManager and
+                            addon.inventoryManager.bagHook)
                     },
                     showJunkIcon = {
                         name = L("Show junk item indicator"), -- TODO locale
@@ -1030,7 +1048,8 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "toggle",
                         width = optionsWidth * 1.5,
                         order = 4.81,
-                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
+                        hidden = not (addon.inventoryManager and
+                            addon.inventoryManager.bagHook)
                     },
                     autoDiscardItems = {
                         name = L("Discard junk items if bag is full"), -- TODO locale
@@ -1039,7 +1058,8 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "toggle",
                         width = optionsWidth * 1.5,
                         order = 4.83,
-                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
+                        hidden = not (addon.inventoryManager and
+                            addon.inventoryManager.bagHook)
                     },
                     rightClickJunk = {
                         name = L("Toggle junk with modified right click"), -- TODO locale
@@ -1048,7 +1068,8 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "toggle",
                         width = optionsWidth * 1.5,
                         order = 4.84,
-                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
+                        hidden = not (addon.inventoryManager and
+                            addon.inventoryManager.bagHook)
                     },
                     rightClickMod = {
                         name = L("Right Click Modifier"), -- TODO locale
@@ -1061,12 +1082,9 @@ function addon.settings:CreateAceOptionsPanel()
                         disabled = function()
                             return not self.profile.rightClickJunk
                         end,
-                        values = {
-                            [1] = "CTRL",
-                            [2] = "ALT",
-                            [3] = "CTRL+ALT",
-                        },
-                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
+                        values = {[1] = "CTRL", [2] = "ALT", [3] = "CTRL+ALT"},
+                        hidden = not (addon.inventoryManager and
+                            addon.inventoryManager.bagHook)
                     },
                     autoSellJunk = {
                         name = L("Auto Sell Junk"), -- TODO locale
@@ -1075,7 +1093,8 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "toggle",
                         width = optionsWidth * 1.5,
                         order = 4.86,
-                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
+                        hidden = not (addon.inventoryManager and
+                            addon.inventoryManager.bagHook)
                     },
                     sellKeybind = {
                         name = L("Delete Cheapest Junk Item Keybind"), -- TODO locale
@@ -1083,7 +1102,8 @@ function addon.settings:CreateAceOptionsPanel()
                         type = "keybinding",
                         width = optionsWidth * 1.25,
                         order = 4.87,
-                        hidden = not (addon.inventoryManager and addon.inventoryManager.bagHook),
+                        hidden = not (addon.inventoryManager and
+                            addon.inventoryManager.bagHook),
                         get = function()
                             local commandName =
                                 "CLICK RXPInventory_DeleteJunk:LeftButton"
@@ -1209,9 +1229,11 @@ function addon.settings:CreateAceOptionsPanel()
                         end,
                         desc = function()
                             if addon.game == "CLASSIC" then
-                                return L("Auto detects seasonal buffs and adjust the routes accordingly")
+                                return L(
+                                           "Auto detects seasonal buffs and adjust the routes accordingly")
                             else
-                                return L("Checks for heirlooms and experience buffs")
+                                return L(
+                                           "Checks for heirlooms and experience buffs")
                             end
                         end,
                         type = "toggle",
@@ -1391,8 +1413,12 @@ function addon.settings:CreateAceOptionsPanel()
                         desc = L(
                             "Adjust the leveling routes to the current season"),
                         type = "select",
-                        values = {[0] = L"None", [1] = L"Season of Mastery", [2] = L"Season of Discovery"},
-                        --sorting = {0, 1, 2},
+                        values = {
+                            [0] = L "None",
+                            [1] = L "Season of Mastery",
+                            [2] = L "Season of Discovery"
+                        },
+                        -- sorting = {0, 1, 2},
                         width = optionsWidth,
                         order = 2.5,
                         set = function(info, value)

@@ -194,7 +194,7 @@
                 </Anchors>
                 <Scripts>
                     <OnClick>
-                        print(".ImportButton:Onclick")
+                        RXP.settings.OpenSettings('ShoppingListImport', 500, 200)
                     </OnClick>
                 </Scripts>
             </Button>
