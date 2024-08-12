@@ -547,10 +547,11 @@ function addon.auctionHouse.shoppingList:ParseList(text)
 end
 
 function addon.auctionHouse.shoppingList.functions.itemId(itemId)
+    -- print("functions, itemId", itemId, type(itemId))
     if type(itemId) == "string" then -- on parse
         local id = tonumber(itemId)
         local lookupId = GetItemInfoInstant(itemId)
-        print("itemId", id, itemId, lookupId, id == lookupId)
+        -- print("itemId", id, itemId, lookupId, id == lookupId)
         -- Use this to check if itemId is valid
         return id == lookupId and id
     end
@@ -682,12 +683,16 @@ function addon.auctionHouse.shoppingList:CreateImportPanel()
                 name = L('Import'),
                 width = "full",
                 multiline = false,
-                validate = function(_, val) -- Use validate instead of set, to bypass resize-on-update
-                    if not addon.read(val) then
+                validate = function(_, val)
+                    if addon.read(val) ~= '' then
+                        return true
+                    else
                         return "Invalid encoding"
                     end
-
+                end,
+                set = function(_, val)
                     if addon.auctionHouse.shoppingList.Import(val) then
+                        addon.settings.CloseSettings('ShoppingListImport')
                         return true
                     end
                 end,
@@ -716,9 +721,8 @@ function addon.auctionHouse.shoppingList:CreateImportPanel()
 end
 
 function addon.auctionHouse.shoppingList.Test()
-    if isEmpty(RXPCData.shoppingList) then
-        addon.auctionHouse.shoppingList.LoadList(
-            [[#expansion classic
+    addon.auctionHouse.shoppingList.LoadList(
+        [[#expansion classic
 --#displayName Foo - Defias Pillager
 #faction Horde
 #realm Defias Pillager
@@ -753,5 +757,4 @@ item --Copper Ore
   .priceThreshold 1.3
   .count 3
 ]])
-    end
 end

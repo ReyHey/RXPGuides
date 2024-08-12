@@ -72,12 +72,10 @@ function addon.settings.OpenSettings(panelName, width, height)
             end
 
             if width then
-                acdFrame.width = width
                 acdFrame:SetWidth(width)
             end
 
             if height then
-                acdFrame.height = height
                 acdFrame:SetHeight(height)
             end
 
@@ -91,6 +89,27 @@ function addon.settings.OpenSettings(panelName, width, height)
     if category:HasSubcategories() then category.expanded = true end
 
     _G.Settings.OpenToCategory(category.ID)
+end
+
+function addon.settings.CloseSettings(panelName)
+    -- Only supports standalone Ace options, Import and ShoppingListImport
+    if not panelName then return end
+
+    local optionsName = fmt("%s/%s", addon.RXPOptions.name, panelName)
+
+    -- If sub category, open dedicated standalone window
+    AceConfigDialog:Close(optionsName)
+
+    --[[
+    local acdFrame = AceConfigDialog.OpenFrames and
+                            AceConfigDialog.OpenFrames[optionsName]
+
+    if acdFrame and acdFrame:IsShown() then
+        acdFrame:Close()
+        -- Successfully opened sub menu
+        return
+    end
+    ]]
 end
 
 function addon.settings.ChatCommand(input)
