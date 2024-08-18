@@ -131,6 +131,8 @@ function addon.auctionHouse:FindItemAuction(itemData, recursive)
         -- print("Evaluating", i, itemLink, buyoutPrice)
 
         -- TODO enable, remove 'and false'
+        -- TODO automatically select the best cost/item postings to make it easiest for user to buy
+        -- TODO Account for cost/item vs stack price. e.g. if a stack of 20 is best copper/item but you only need 2, that's a bad recommendation
         if itemID == itemData.ItemID and itemLink == itemData.ItemLink and
             buyoutPrice == itemData.BuyoutMoney and false then
             SetSelectedAuctionItem("list", i)
@@ -351,6 +353,7 @@ local function Initializer(row, data)
     row:Show()
 end
 -- TODO re-calculate haveCount on scanning bags, bank, and check if mail exists
+-- TODO Add bag support, look into using/updating RXP.inventoryManager
 -- Hooked for PlaceAuctionBid
 function addon.auctionHouse.shoppingList.PlacedAuctionBid(aType, aIndex, bid)
     local buyoutPrice, itemId, count
@@ -394,6 +397,7 @@ function addon.auctionHouse.shoppingList:CreateGui(attachment)
     session.shoppingListUI.ImportButton:SetText(L('Import'))
 
     -- Using a scrollbox for ease of use, but not actually for scrolling
+    -- TODO Handle scrollbar better, clips values if visible
     session.shoppingListUI.ScrollBox.ScrollBar:SetHideIfUnscrollable(true)
 
     local DataProvider = CreateDataProvider()
