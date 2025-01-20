@@ -2208,7 +2208,6 @@ step
     .use 2839
 step
     #completewith ThurmanGregor
-    #label MillsOverun
     >>Kill |cRXP_ENEMY_Soldiers|r and |cRXP_ENEMY_Bonecasters|r. Loot them for their |cRXP_LOOT_Ribs|r and |cRXP_LOOT_Skulls|r
     .complete 426,1 --Notched Rib (5)
     .mob +Rattlecage Soldier
@@ -2242,6 +2241,7 @@ step
     .complete 354,1 --Gregor's Remains (1)
     .unitscan +Gregor Agamand
 step
+    #label MillsOverun
     #loop
     .goto Tirisfal Glades,45.08,31.15,0
     .goto Tirisfal Glades,43.71,35.25,60,0
@@ -2522,6 +2522,14 @@ step << Priest
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Beryl|r on the second floor
 	.trainer >> Train your class spells
     .target Dark Cleric Beryl
+step << Warrior
+    #optional
+    .abandon 1505 >>Abandon Veteran Uzzek
+    .isOnQuest 1505
+step << Warrior
+    #optional
+    .abandon 1498 >>Abandon Path of Defense
+    .isOnQuest 1498
 step << Warrior
     .goto Tirisfal Glades,61.85,52.55
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Austil|r
@@ -7811,6 +7819,14 @@ step << Warrior
     .xp >10,1
 step << Warrior
     #optional
+    .abandon 1505 >>Abandon Veteran Uzzek
+    .isOnQuest 1505
+step << Warrior
+    #optional
+    .abandon 1498 >>Abandon Path of Defense
+    .isOnQuest 1498
+step << Warrior
+    #optional
     .goto Tirisfal Glades,61.85,52.55
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Austil|r
     .trainer >> Train your class spells
@@ -8320,6 +8336,16 @@ step << Priest
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Beryl|r on the second floor
 	.trainer >> Train your class spells
     .target Dark Cleric Beryl
+step << Warrior
+    #xprate <2.1
+    #optional
+    .abandon 1505 >>Abandon Veteran Uzzek
+    .isOnQuest 1505
+step << Warrior
+    #xprate <2.1
+    #optional
+    .abandon 1498 >>Abandon Path of Defense
+    .isOnQuest 1498
 step << Warrior
     #xprate <2.1
     .goto Tirisfal Glades,61.85,52.55
