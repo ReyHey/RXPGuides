@@ -278,15 +278,20 @@ local IsTurnedIn = C_QuestLog.IsQuestFlaggedCompleted or
                     _G.IsQuestFlaggedCompleted or
                         function(id) return _G.GetQuestsCompleted()[id] end
 
-local IsQuestTurnedIn = function(id)
+local IsQuestTurnedIn = function(id,accountWide)
     if not id then return end
 
     local recentTurnIn = addon.recentTurnIn[id]
-    local isQuestTurnedIn = IsTurnedIn(id)
+    local isQuestTurnedIn
+    if accountWide and C_QuestLog.IsQuestFlaggedCompletedOnAccount then
+        isQuestTurnedIn = C_QuestLog.IsQuestFlaggedCompletedOnAccount(id)
+    else
+        isQuestTurnedIn = IsTurnedIn(id)
+    end
     if isQuestTurnedIn then addon.recentTurnIn[id] = nil end
     return isQuestTurnedIn or (recentTurnIn and GetTime() - recentTurnIn < 2)
 end
-QT = IsQuestTurnedIn
+--QT = IsQuestTurnedIn
 
 function addon.IsQuestComplete(id)
     if not id then return end
@@ -1891,6 +1896,33 @@ function addon.functions.waypoint(self, text, zone, x, y, radius, lowPrio, ...)
         local lowPrio = callback(self, text, zone, x, y, radius, lowPrio, ...)
         if element.lowPrio ~= lowPrio then addon.UpdateMap() end
         element.lowPrio = lowPrio
+    end
+end
+
+function addon.functions.wpradius(self,_,zone,x,y,radius)
+    local element = addon.lastElement
+    if element and element.wx then
+
+        local subzone = zone:find(".-/%d+")
+        if subzone then
+            x = tonumber(x)
+            y = tonumber(y)
+        else
+            zone, x , y = addon.GetMapInfo(zone,x,y)
+            x, y, zone =
+            HBD:GetWorldCoordinatesFromZone(x / 100, y / 100,
+                                            zone)
+        end
+        radius = tonumber(radius)
+        if (x and y and radius) then
+            element.xref, element.yref = x,y
+            element.persistent = true
+            element.activationRadius = radius
+        else
+            return addon.error(
+                        L("Error parsing guide") .. " "  .. addon.currentGuideName ..
+                           ": Invalid coordinates or map name\n" .. self)
+        end
     end
 end
 
@@ -3571,7 +3603,7 @@ end
 function addon.functions.isQuestComplete(self, ...)
     if type(self) == "string" then
         local element = {}
-        local text, id, reverse = ...
+        local text, id, args, reverse = ...
         id = GetQuestId(tonumber(id))
         if not id then
             return addon.error(
@@ -3580,6 +3612,9 @@ function addon.functions.isQuestComplete(self, ...)
         end
         if reverse then
             element.reverse = true
+        end
+        if args == "account" then
+            element.account = true
         end
         element.questId = id
         if text and text ~= "" then element.text = text end
@@ -3600,11 +3635,11 @@ function addon.functions.isQuestComplete(self, ...)
     end
 end
 
-function addon.functions.isQuestNotComplete(self, text, id, ...)
+function addon.functions.isQuestNotComplete(self, text, id, args, ...)
     if type(self) == "string" then
-        return addon.functions.isQuestComplete(self,text,id,true)
+        return addon.functions.isQuestComplete(self,text,id,args,true)
     end
-    return addon.functions.isQuestComplete(self,text,id,...)
+    return addon.functions.isQuestComplete(self,text,id,args,...)
 end
 
 function addon.functions.isOnQuest(self, text, ...)
@@ -3655,13 +3690,23 @@ end
 function addon.functions.isQuestTurnedIn(self, text, ...)
     if type(self) == "string" then
         local element = {}
-        local ids = {...}
-        for k, v in pairs(ids) do ids[k] = GetQuestId(tonumber(v)) end
+        local args = {...}
+        local ids = {}
+        local arg
+        for _, v in pairs(args) do
+            local id = tonumber(v)
+            if id then
+                table.insert(ids,GetQuestId(v))
+            elseif not arg then
+                arg = v
+            end
+        end
         if not ids[1] then
             return addon.error(
                         L("Error parsing guide") .. " " .. addon.currentGuideName ..
                            ": Invalid quest ID\n" .. self)
         end
+        if arg == "account" then element.account = true end
         element.questIds = ids
         if text and text ~= "" then element.text = text end
         element.textOnly = true
@@ -3672,14 +3717,15 @@ function addon.functions.isQuestTurnedIn(self, text, ...)
     local ids = element.questIds
     local questTurnedIn = false
     local event = text
+    local accountWide = element.account
 
     if element.reverse then
         for _, id in pairs(ids) do
-            questTurnedIn = questTurnedIn or not IsQuestTurnedIn(id)
+            questTurnedIn = questTurnedIn or not IsQuestTurnedIn(id,accountWide)
         end
     else
         for _, id in pairs(ids) do
-            questTurnedIn = questTurnedIn or IsQuestTurnedIn(id)
+            questTurnedIn = questTurnedIn or IsQuestTurnedIn(id,accountWide)
         end
     end
     if event ~= "WindowUpdate" and step.active and not questTurnedIn and not addon.settings.profile.debug and not addon.isHidden then
@@ -6226,6 +6272,40 @@ function addon.functions.dungeon(self, text, instance)
             return addon.error(
                 L("Error parsing guide") .. " "  .. addon.currentGuideName ..
                    ': Invalid dungeon name\n' .. self)
+        end
+
+        if text and text ~= "" then
+            return {textOnly = true, text = text}
+        end
+
+    end
+end
+
+addon.professions = {}
+function addon.functions.profession(self, text, instance)
+    if type(self) == "string" then -- on parse
+        local skip
+        if instance and instance:sub(1,1) == "!" then
+            instance = instance:sub(2,-1)
+            skip = true
+        end
+        if not addon.GetProfessionId then return end
+        local tag = addon.GetProfessionId(instance)
+
+        if tag and not skip then
+            if RXPCData.guideMetaData.professionGuides[addon.player.faction] then
+                RXPCData.guideMetaData.professionGuides[addon.player.faction][tag] = true
+            end
+            addon.professions[tag] = true
+            addon.step.profession = tag
+            --print(tag,name)
+            RXPCData.guideMetaData.professionGuides[addon.currentGuideGroup] = true
+        elseif tag and skip then
+            addon.step.professionskip = tag
+        else
+            return addon.error(
+                L("Error parsing guide") .. " "  .. addon.currentGuideName ..
+                   ': Invalid profession name\n' .. self)
         end
 
         if text and text ~= "" then

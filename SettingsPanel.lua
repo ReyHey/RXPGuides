@@ -9,10 +9,10 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 local LibDD = LibStub:GetLibrary("LibUIDropDownMenu-4.0", true)
 local EasyMenu = function(...)
-    if LibDD then
-        LibDD:EasyMenu(...)
-    else
+    if _G.EasyMenu then
         _G.EasyMenu(...)
+    else
+        LibDD:EasyMenu(...)
     end
 end
 
@@ -1517,6 +1517,34 @@ function addon.settings:CreateAceOptionsPanel()
                                            .faction])
                         end
                     },
+                    professions = {
+                        hidden = function()
+                            return addon.game ~= "CLASSIC" or not next(addon.professions)
+                        end,
+                        --[[disabled = function()
+                            return addon.settings.profile.enableAutomaticXpRate
+                        end,]]
+                        name = L("Professions"),
+                        desc = function()
+                            local out =
+                                L "Level professions along with the guide\nGuides that support this feature:\n"
+                            for guide in pairs(
+                                             RXPCData.guideMetaData.professionGuides) do
+                                out = fmt("%s\n%s", out, guide)
+                            end
+                            return out
+                        end,
+                        type = "select",
+                        values = addon.GenerateProfessionTable or {},
+                        --sorting = {0, 1, 2},
+                        width = optionsWidth,
+                        order = 2.91,
+                        set = function(info, value)
+                            SetProfileOption(info, value)
+                            addon.ReloadGuide()
+                            addon.RXPFrame.GenerateMenuTable()
+                        end,
+                    },
                     questCleanupHeader = {
                         name = L("Quest Cleanup"),
                         type = "header",
@@ -2351,7 +2379,8 @@ function addon.settings:CreateAceOptionsPanel()
                         end,
                         disabled = function()
                             return not (self.profile.enableTips and
-                                       self.profile.enableItemUpgrades)
+                                       self.profile.enableItemUpgrades) or
+                                       UnitLevel("player") == GetMaxPlayerLevel()
                         end
                     },
                     enableQuestChoiceRecommendation = {
@@ -2365,7 +2394,8 @@ function addon.settings:CreateAceOptionsPanel()
                         end,
                         disabled = function()
                             return not (self.profile.enableTips and
-                                       self.profile.enableItemUpgrades)
+                                       self.profile.enableItemUpgrades) or
+                                       UnitLevel("player") == GetMaxPlayerLevel()
                         end
                     },
                     enableQuestChoiceAutomation = {
@@ -2381,8 +2411,8 @@ function addon.settings:CreateAceOptionsPanel()
                         disabled = function()
                             return not (self.profile.enableTips and
                                        self.profile.enableItemUpgrades and
-                                       self.profile
-                                           .enableQuestChoiceRecommendation)
+                                       self.profile.enableQuestChoiceRecommendation) or
+                                       UnitLevel("player") == GetMaxPlayerLevel()
                         end
                     },
                     enableItemUpgradesAH = {
@@ -2393,13 +2423,12 @@ function addon.settings:CreateAceOptionsPanel()
                         width = optionsWidth,
                         order = 5.6,
                         hidden = function()
-                            return not addon.itemUpgrades
+                            return not addon.itemUpgrades or addon.game == "CATA"
                         end,
                         disabled = function()
                             return not (self.profile.enableTips and
                                        self.profile.enableItemUpgrades) or
-                                       UnitLevel("player") ==
-                                       GetMaxPlayerLevel()
+                                       UnitLevel("player") == GetMaxPlayerLevel()
                         end,
                         set = function(info, value)
                             SetProfileOption(info, value)
@@ -3362,8 +3391,9 @@ function addon.settings.ToggleActive()
     addon.settings.profile.showEnabled = not addon.settings.profile.showEnabled
 
     for _, frame in pairs(addon.enabledFrames) do
-        if frame.IsFeatureEnabled() and frame.SetShown then
-            frame:SetShown(addon.settings.profile.showEnabled)
+        local shown, isSecure = frame.IsFeatureEnabled()
+        if not (isSecure and InCombatLockdown()) then
+            frame:SetShown(shown)
         end
     end
 

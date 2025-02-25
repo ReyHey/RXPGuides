@@ -5,10 +5,11 @@ RXPGuides.RegisterGuide([[
 #df
 #version 1
 #group RestedXP The War Within
-#subgroup Max Level Campaign (80)
+#subgroup 11.0 Max Level Campaign (80)
 #name a) Against the Current
 #displayname |cRXP_WARN_Chapter 1|r - Against the Current
 #next b) Ties That Bird
+#subweight 6
 
 step
     .isOnQuest 84365
@@ -241,10 +242,11 @@ RXPGuides.RegisterGuide([[
 #df
 #version 1
 #group RestedXP The War Within
-#subgroup Max Level Campaign (80)
+#subgroup 11.0 Max Level Campaign (80)
 #name b) Ties That Bird
 #displayname |cRXP_WARN_Chapter 2|r - Ties That Bird
 #next c) News from Below
+#subweight 6
 
 step
     .goto 2339,31.54,59.68
@@ -629,10 +631,11 @@ RXPGuides.RegisterGuide([[
 #df
 #version 1
 #group RestedXP The War Within
-#subgroup Max Level Campaign (80)
+#subgroup 11.0 Max Level Campaign (80)
 #name c) News from Below
 #displayname |cRXP_WARN_Chapter 3|r - News from Below
 #next d) The Machines to War
+#subweight 6
 
 
 step
@@ -892,7 +895,7 @@ RXPGuides.RegisterGuide([[
 #df
 #version 1
 #group RestedXP The War Within
-#subgroup Max Level Campaign (80)
+#subgroup 11.0 Max Level Campaign (80)
 #name d) The Machines to War
 #displayname |cRXP_WARN_Chapter 4|r - The Machines to War
 #next e) A Light in the Dark
@@ -1443,10 +1446,11 @@ RXPGuides.RegisterGuide([[
 #df
 #version 1
 #group RestedXP The War Within
-#subgroup Max Level Campaign (80)
+#subgroup 11.0 Max Level Campaign (80)
 #name e) A Light in the Dark
 #displayname |cRXP_WARN_Chapter 5|r - A Light in the Dark
 #next z) Lingering Shadows
+#subweight 6
 
 
 step
@@ -1640,9 +1644,10 @@ RXPGuides.RegisterGuide([[
 #df
 #version 1
 #group RestedXP The War Within
-#subgroup Max Level Storylines (80)
+#subgroup Miscellaneous Storylines (80)
 #name z) Lingering Shadows
 #displayname Lingering Shadows
+#subweight 4.5
 
 step
     .goto 2339,42.36,26.88
@@ -2003,9 +2008,10 @@ RXPGuides.RegisterGuide([[
 #df
 #version 1
 #group RestedXP The War Within
-#subgroup Max Level Storylines (80)
+#subgroup Miscellaneous Storylines (80)
 #name f) Story Mode: Queen Ansurek
 #displayname Story Mode: Queen Ansurek
+#subweight 4.5
 
 step
     .goto 2339,31.62,63.16
@@ -2180,10 +2186,11 @@ RXPGuides.RegisterGuide([[
 #df
 #version 1
 #group RestedXP The War Within
-#subgroup Max Level Storylines (80)
+#subgroup Miscellaneous Storylines (80)
 #name g) Siren Isle Campaign
 #next h) Fate of the Kirn Tor
 #displayname Siren Isle Campaign
+#subweight 4.5
 
 --WEEK 1 CAMPAIGN START
 
@@ -2413,9 +2420,8 @@ step
     .goto 2369,71.09,44.11
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Angorla|r
     .turnin 84725 >>Turn in The Circlet Calls
-    .target Angorla
-    .accept 86174 >>Accept Special Assignment: Storm's a Brewin'
     .accept 84726 >>Accept Uncovered Mysteries
+    .target Angorla
 
 --CONTRUBUTION
 
@@ -2541,16 +2547,29 @@ step
     .turnin 85653 >>Turn in Dipping a Toe
     .target Apprentice Tanmar
 
-
+step
+    .isQuestAvailable 85654
+    .isQuestTurnedIn 85653
+    .isOnQuest 84852
+    >>Kill |cRXP_ENEMY_rares|r, |cRXP_ENEMY_enemies|r, complete repeatable quests and excavations or open |cRXP_PICK_chests|r to complete the first part of the special assignment quest
+    .complete 84852,1 --Complete activities and secure the Siren Isle (100%)
+step
+    .isQuestAvailable 85654
+    .isQuestTurnedIn 85653
+    .isOnQuest 84851
+    >>Kill |cRXP_ENEMY_rares|r, |cRXP_ENEMY_enemies|r, complete repeatable quests and excavations or open |cRXP_PICK_chests|r to complete the first part of the special assignment quest
+    .complete 84851,1 --Complete activities and secure the Siren Isle (100%)
+step
+    .isQuestAvailable 85654
+    .isQuestTurnedIn 85653
+    .isOnQuest 84850
+    >>Kill |cRXP_ENEMY_rares|r, |cRXP_ENEMY_enemies|r, complete repeatable quests and excavations or open |cRXP_PICK_chests|r to complete the first part of the special assignment quest
+    .complete 84850,1 --Complete activities and secure the Siren Isle (100%)
 step
     .goto 2369,71.28,45.94
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Didi the Wrench|r
     .accept 85654 >>Accept Juicing Up And Storming Out
     .target Didi the Wrench
-step
-    .isOnQuest 85654
-    >>Kill |cRXP_ENEMY_rares|r, |cRXP_ENEMY_enemies|r, complete repeatable quests and excavations or open |cRXP_PICK_chests|r to complete the first part of the special assignment quest
-    .complete 84851,1 --Complete activities and secure the Siren Isle (100%)
 step
     .goto 2369,69.07,49.25
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Suzie Boltwrench to enter Storm Mode|r
@@ -2585,7 +2604,7 @@ step
     .complete 85654,4 --1/1 Use the N.U.K.U.L.A.R Target Painter
 step
     .isOnQuest 85654
-    .goto 2369,69.07,49.25
+    .goto 2369,69.23,49.26
     .aura -458069 >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Suzie Boltwrench to leave Storm Mode|r
     .skipgossipid 125326
     .target Suzie Boltwrench
@@ -2663,27 +2682,25 @@ step
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Apprentice Tanmar|r
     .turnin 85656 >>Turn in The Singing Bandit Catcher
     .target Apprentice Tanmar
-
 step
-    +The next free update will contain the next part of the story!
----- MAIN CAMPAIGN WEEK 5
---
---step
---    .goto 2369,71.28,45.98
---    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Didi the Wrench|r
---    .accept 85657 >>Accept Cyrce Would Be So Proud
---    .target Didi the Wrench
---step
---    .goto 2369,71.43,45.49
---    .complete 85657,1 --1/1 Survive a ride in the Skypiercer
---step
---    .goto 2369,71.29,45.93
---    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Didi the Wrench|r
---    .turnin 85657 >>Turn in Cyrce Would Be So Proud
---    .target Didi the Wrench
---
----- MAIN CAMPAIGN WEEK 6
-
+    .goto 2369,71.28,45.98
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Didi the Wrench|r
+    .accept 85657 >>Accept Cyrce Would Be So Proud
+    .target Didi the Wrench
+step
+    .goto 2369,72.19,44.89
+    >>|TInterface/cursor/crosshair/interact.blp:20|tClick on the |cRXP_PICK_The Skypiercer|r
+    *|cRXP_WARN_Use the correct ability:|r
+    - Wind on the left: Left
+    - Wind on the right: Right
+    - Wind in the middle: Forward
+    .complete 85657,1 --1/1 Survive a ride in the Skypiercer
+    .target The Skypiercer
+step
+    .goto 2369,71.29,45.93
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Didi the Wrench|r
+    .turnin 85657 >>Turn in Cyrce Would Be So Proud
+    .target Didi the Wrench
 ]])
 
 -- Siren Isle Dailies/Weeklies?
@@ -2691,11 +2708,10 @@ RXPGuides.RegisterGuide([[
 #df
 #version 1
 #group RestedXP The War Within
-#subgroup Max Level Storylines (80)
-#name h) Siren Isle Daillies
-#displayname Siren Isle Daillies
-#internal
-
+#subgroup Dailies and Weeklies (80)
+#name a) Siren Isle Weeklies
+#displayname Siren Isle Weeklies
+#subweight -2
 step
     #loop
     .goto 2369,69.29,43.48,10,0
@@ -2988,7 +3004,7 @@ step
     .mob Extractor Silisai
 step
     .isQuestAvailable 85051
-    .isOnQuest 84627,84430,85549
+    .isOnQuest 84627,84430,85589
     .goto 2369,41.95,68.09
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Machinist Kromleg|r
     .accept 85051 >>Accept Beach Comber
@@ -3010,6 +3026,7 @@ step
 step
     .isOnQuest 85051
     .isQuestComplete 85051
+    #label ThreeHeadsOfTheDeep
     .goto 2369,41.95,68.10
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Machinist Kromleg|r
     .turnin 85051 >>Turn in Beach Comber
@@ -3028,29 +3045,35 @@ step
     .mob Water Shell
     .mob Crystal Chunk
 step
-    .isOnQuest 85549
+    .isOnQuest 85589
     #completewith next
     #label RuffledPagesA
-    >>Kill |cRXP_ENEMY_X|r. Loot them for the |T1:0|t[|cRXP_LOOT_|r].
-    .complete 85549,1 --15/15 Ruffled Pages
+    >>Kill |cRXP_ENEMY_Cliffreach Pridetalons|r. Loot them for the |T134332:0|t[|cRXP_LOOT_Ruffled Pages|r].
+    .complete 85589,1 --15/15 Ruffled Pages
+    .mob Cliffreach Pridetalon
+    .mob Cliffreach Matriarch
 step
-    .isOnQuest 85549
+    .isOnQuest 85589
     #completewith RuffledPagesA
     .goto 2369,46.27,65.11
     .cast 313062 >>Look up and click on the |cRXP_PICK_Grappling Hold|r.
 step
-    .isOnQuest 85549
+    .isOnQuest 85589
     #requires RuffledPagesA
     #loop
     .goto 2369,42.31,61.27,15,0
     .goto 2369,39.70,62.48,15,0
+    .goto 2369,41.94,60.27,10,0
+    .goto 2369,43.18,63.49,10,0
     .goto 2369,39.59,58.73,15,0
+    .goto 2369,38.83,58.94,20,0
     .goto 2369,31.29,59.51,15,0
     .goto 2369,30.69,65.57,15,0
     .goto 2369,29.57,70.49,10,0
     .goto 2369,26.74,72.44,15,0
     >>Kill |cRXP_ENEMY_Cliffreach Pridetalons|r. Loot them for the |T134332:0|t[|cRXP_LOOT_Ruffled Pages|r].
-    .complete 85549,1 --15/15 Ruffled Pages
+    *Look up and click on the |cRXP_PICK_Grappling Hold|r.
+    .complete 85589,1 --15/15 Ruffled Pages
     .mob Cliffreach Pridetalon
     .mob Cliffreach Matriarch
 step
@@ -3142,6 +3165,18 @@ step
     .turnin 84222 >>Turn in Secure the Perimeter
     .target Sky-Captain Elaena Lancekat
 step
+    .isOnQuest 84430
+    .goto 2369,69.43,42.87
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Sky-Captain Elaena Lancekat|r
+    .turnin 84430 >>Turn in Crystal Crusade
+    .target Sky-Captain Elaena Lancekat
+step
+    .isOnQuest 84627
+    .goto 2369,69.43,42.87
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Sky-Captain Elaena Lancekat|r
+    .turnin 84627 >>Turn in Three Heads of the Deep
+    .target Sky-Captain Elaena Lancekat
+step
     .isOnQuest 84680
     .goto 2369,69.13,43.12
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Dawn|r
@@ -3158,96 +3193,25 @@ step
     .goto 2369,71.05,39.71
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Stellin Verasa|r
     .turnin 83932 >>Turn in Historical Documents
+    .target Stellin Verasa,
+step
+    .isOnQuest 85589
+    .goto 2369,71.05,39.71
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Stellin Verasa|r
+    .turnin 85589 >>Turn in Ruffled Pages
     .target Stellin Verasa
 ]])
 
+-- Fate of the Kirin Tor 1
 RXPGuides.RegisterGuide([[
 #df
 #version 1
 #group RestedXP The War Within
-#subgroup Max Level Storylines (80)
-#name h) Storm Daillies Inguide
-#displayname Siren Isle Daillies
-#internal
-
--- storm daillies storms brewin
-step
-    .goto 2369,43.75,23.91
-    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Regald Hornfyre|r
-    .accept 84241 >>Accept Shoreline Stand
-    .target Regald Hornfyre
-step
-    .goto 2375,60.61,15.00
-    .complete 84241,3 --1/1 Use the Singing Tablet to enter the Forgotten Tomb (Optional)
-step
-    .goto 2375,52.76,35.16
-    >>Kill |cRXP_ENEMY_Tide-Champion Korval|r
-    .complete 84241,2 --1/1 Tide-Champion Korval slain
-    .mob Tide-Champion Korval
-step
-    .goto 2369,49.01,16.72
-    >>Kill |cRXP_ENEMY_Brinebound Wraith|r
-    .complete 84241,1 --15/15 Brinebound Wraith slain
-    .mob Brinebound Wraith
-step
-    .goto 2369,43.73,23.89
-    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Regald Hornfyre|r
-    .turnin 84241 >>Turn in Shoreline Stand
-    .target Regald Hornfyre
-    .complete 85113,3 --Storm threats eliminated (100%)
-step
-    .goto 2369,63.45,66.37
-    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Sally Boltwrench|r
-    .accept 84225 >>Accept Eggstinction
-    .target Sally Boltwrench
-step
-    .goto 2369,60.52,73.65
-    .complete 84225,2 --12/12 Spawning Cluth destroyed using equipment
-step
-    .goto 2369,57.12,71.07
-    .complete 84225,1 --12/12 Seafury Eggtenders
-step
-    .goto 2369,63.49,66.42
-    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Sally Boltwrench|r
-    .turnin 84225 >>Turn in Eggstinction
-    .target Sally Boltwrench
-]])
-
-RXPGuides.RegisterGuide([[
-#df
-#version 1
-#group RestedXP The War Within
-#subgroup Max Level Storylines (80)
-#name h) Siren Isle Crocodile
-#internal
-
-step
-    .goto 2369,71.01,48.67
-    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Starving Snapdragon Runt|r
-    .accept 86482 >>Accept A Lifeline
-    .target Starving Snapdragon Runt
-step
-    .goto 2369,71.24,47.43
-    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Zexel Fingersnap|r
-    .complete 86482,1 --1/1 Speak to Zexel Fingersnap
-    .target Zexel Fingersnap
-    .complete 86482,2 --1/1 Kaja'Cola-braised Meat Aquired
-    .skipgossipid 131423
-step
-    .goto 2369,70.98,48.61
-    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Starving Snapdragon Runt|r
-    .turnin 86482 >>Turn in A Lifeline
-    .target Starving Snapdragon Runt
-]])
-
--- Fate of the Kirin Tor
-RXPGuides.RegisterGuide([[
-#df
-#version 1
-#group RestedXP The War Within
-#subgroup Max Level Storylines (80)
-#name h) Fate of the Kirin Tor
-#displayname Fate of the Kirin Tor
+#subgroup 11.0.7 Fate of the Kirin Tor (80)
+#name a) Arcane Desolation
+#displayname |cRXP_WARN_Chapter 1|r - Arcane Desolation
+#next b) Strength Amidst Ruins
+#subweight 5
 
 step
     .isQuestAvailable 82702
@@ -3510,10 +3474,24 @@ step
     .target Kalecgos
     .accept 83643 >>Accept Somehow We Survived
 step
-    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Kalecgos|r and |cRXP_FRIENDLY_Lady Jaina Proudmoore|r.
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Kalecgos|r.
     .turnin 83643 >>Turn in Somehow We Survived
     .goto 2248,30.99,57.80
     .target +Kalecgos
+]])
+
+-- Fate of the Kirin Tor 2
+RXPGuides.RegisterGuide([[
+#df
+#version 1
+#group RestedXP The War Within
+#subgroup 11.0.7 Fate of the Kirin Tor (80)
+#name b) Strength Amidst Ruins
+#displayname |cRXP_WARN_Chapter 2|r - Strength Amidst Ruins
+#subweight 5
+
+step
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Lady Jaina Proudmoore|r.
     .accept 83723 >>Accept A Helping Hand
     .goto 2248,30.97,57.73
     .target +Lady Jaina Proudmoore

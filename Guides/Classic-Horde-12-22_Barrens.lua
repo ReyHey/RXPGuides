@@ -217,7 +217,8 @@ step << !Tauren !Undead
     #xprate <1.5 << !Hunter
     #label DemonSeed
     .goto The Barrens,47.97,19.07
-    >>Right click the |cRXP_PICK_Altar|r. Make sure you have a |T134095:0|t[Flawed Power Stone] on you
+    >>Right click the |cRXP_PICK_Altar|r
+    >>|cRXP_WARN_Make sure you have a|r |T134095:0|t[Flawed Power Stone] |cRXP_WARN_(30 minute duration) on you|r
     .collect 4986,1,924 --Collect Flawed Power Stone
     .complete 924,1 --Destroy the Demon Seed (1)
     .isOnQuest 924
@@ -1416,7 +1417,7 @@ step
     .goto The Barrens,52.63,38.07,80,0
     .goto The Barrens,49.49,37.20,80,0
     .goto The Barrens,48.33,36.75,80,0
-    >>Finish killing |cRXP_ENEMY_Zhevras|r. Loot them for |cRXP_LOOT_Hooves|r
+    >>Finish killing |cRXP_ENEMY_Zhevras|r. Loot them for their |cRXP_LOOT_Hooves|r
     .complete 845,1 --Zhevra Hooves (4)
     .mob Zhevra Runner
 step
@@ -3204,7 +3205,7 @@ step
 step
     .goto Stonetalon Mountains,73.48,85.59
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Kaya|r
-    .accept 6523 >> Accept Protect Kaya
+    .accept 6523,1 >> Accept Protect Kaya
     .target Kaya Flathoof
     .isQuestTurnedIn 6548
 step
@@ -4149,15 +4150,21 @@ step
 step
     .goto Westfall,30.01,86.02
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Captain Grayson|r
-    .accept 104 >> Accept The Coastal Menace
     .accept 103 >> Accept Keeper of the Flame
     .target Captain Grayson
+    .itemcount 814,5 -- Flask of Oil (5)
     .dungeon DM
 step
     .goto Westfall,30.01,86.02
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Captain Grayson|r
     .turnin 103 >> Turn in Keeper of the Flame
     .itemcount 814,5 -- Flask of Oil (5)
+    .target Captain Grayson
+    .dungeon DM
+step
+    .goto Westfall,30.01,86.02
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Captain Grayson|r
+    .accept 104 >> Accept The Coastal Menace
     .target Captain Grayson
     .dungeon DM
 step
@@ -4675,12 +4682,12 @@ step << Druid
 step << Druid
     #completewith next
     .goto Moonglade,54.30,55.68
-    .collect 15877,1,30,1 >>Loot the |cRXP_PICK_Bauble Container|r at the bottom of the lake for a|T134125:0|t[Shrine Bauble]
+    .collect 15877,1,28,1 >>Loot the |cRXP_PICK_Bauble Container|r at the bottom of the lake for a|T134125:0|t[Shrine Bauble]
     >>|cRXP_WARN_Do not go underwater untill you arive right above the Bauble|r
 step << Druid
     .goto Moonglade,36.40,42.01
     .cast 19719 >> Use the |T134125:0|t[Shrine Bauble] at the Shrine of Remulos
-    .complete 30,1 -- Complete the Trial of the Lake
+    .complete 28,1 -- Complete the Trial of the Lake
     .use 15877
 step << Druid
     .goto Moonglade,36.52,40.10
@@ -5804,7 +5811,7 @@ step
    .goto Ashenvale,12.06,34.63
    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Muglash|r
    >>|cRXP_WARN_This will start an escort quest. Be careful as it's difficult|r
-   .accept 6641 >> Accept Vorsha the Lasher
+   .accept 6641,1 >> Accept Vorsha the Lasher
    .target Muglash
 step
     #xprate <1.5
@@ -6016,7 +6023,7 @@ step << Priest
     #xprate <1.5
     #season 0,1
     >>Kill |cRXP_ENEMY_Baron Aquanis|r. Loot him for a |T136222:0|t[|cRXP_LOOT_Strange Water Globe|r]. Use it to accept the quest
-    .collect 16782,1 --Strange Water Globe (1)
+    .collect 16782,1,6782 --Strange Water Globe (1)
     .accept 6922 >>Accept Baron Aquanis
     .mob Baron Aquanis
     .use 16782
@@ -6755,7 +6762,8 @@ step << !Tauren !Undead
     #xprate <1.5
     #label DemonSeed
     .goto The Barrens,47.97,19.07
-    >>Right click the |cRXP_PICK_Altar|r. Make sure you have a |T134095:0|t[Flawed Power Stone] on you
+    >>Right click the |cRXP_PICK_Altar|r
+    >>|cRXP_WARN_Make sure you have a|r |T134095:0|t[Flawed Power Stone] |cRXP_WARN_(30 minute duration) on you|r
     .collect 4986,1,924 --Collect Flawed Power Stone
     .complete 924,1 --Destroy the Demon Seed (1)
     .isOnQuest 924
@@ -8059,7 +8067,7 @@ step
     .goto The Barrens,52.63,38.07,80,0
     .goto The Barrens,49.49,37.20,80,0
     .goto The Barrens,48.33,36.75,80,0
-    >>Finish killing |cRXP_ENEMY_Zhevras|r. Loot them for |cRXP_LOOT_Hooves|r
+    >>Finish killing |cRXP_ENEMY_Zhevras|r. Loot them for their |cRXP_LOOT_Hooves|r
     .complete 845,1 --Zhevra Hooves (4)
     .mob Zhevra Runner
 step
@@ -10070,7 +10078,7 @@ step
     #optional
     .goto Stonetalon Mountains,73.48,85.59
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Kaya|r
-    .accept 6523 >> Accept Protect Kaya
+    .accept 6523,1 >> Accept Protect Kaya
     .target Kaya Flathoof
     .isQuestTurnedIn 6548
 step
