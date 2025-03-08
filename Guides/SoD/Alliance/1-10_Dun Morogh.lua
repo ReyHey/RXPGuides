@@ -20,13 +20,14 @@ step
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Sten Stoutarm|r
     .accept 179 >> Accept Dwarven Outfitters
     .target Sten Stoutarm
-step << Mage/Hunter/Priest/Paladin/Warrior
+step << Mage/Hunter/Priest/Paladin/Warrior/Warlock
     .goto Dun Morogh,29.47,72.06
     >> |Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to the |cRXP_FRIENDLY_Rune Broker|r
     >> |cRXP_WARN_MAKE SURE NOT TO VENDOR GEAR THAT CAN BE EQUIPPED|r
     >> |cRXP_BUY_Sell your|r |T135005:0|t[Shirt] |cRXP_BUY_and buy the |T135975:0|t[|cRXP_FRIENDLY_Prophecy of a Desecrated Citadel|r] from him|r << Priest
     >> |cRXP_BUY_Sell your|r |T135005:0|t[Shirt] |cRXP_BUY_and buy the |T133745:0|t[|cRXP_FRIENDLY_Testament of Martyrdom|r] from him|r << Paladin
     >> |cRXP_BUY_Sell your|r |T135005:0|t[Shirt] |cRXP_BUY_and buy the |T134419:0|t[|cRXP_FRIENDLY_Rune of Frenzied Assault|r] from him|r << Warrior
+    >> |cRXP_BUY_Sell your|r |T135005:0|t[Shirt] |cRXP_BUY_and buy the |T133733:0|t[|cRXP_FRIENDLY_Grimoire of Fel Armor|r] from him|r << Warlock
     >> |cRXP_BUY_Vendor trash and buy the |T134419:0|t[|cRXP_FRIENDLY_Rune of Shadowstrike|r]|r << Rogue
     >> |cRXP_BUY_Sell your|r |T135005:0|t[Shirt] |cRXP_BUY_and buy the |T134939:0|t[|cRXP_FRIENDLY_Spell Notes: Living Flame|r] from him|r << Mage
     >> |cRXP_BUY_Sell your|r |T135005:0|t[Shirt] and |T132540:0|t[Boots] |cRXP_WARN_(they can't be engraved on)|r |cRXP_BUY_and buy the |T134419:0|t[|cRXP_FRIENDLY_Rune of Kill Command|r] and |T133739:0|t[|cRXP_FRIENDLY_Treatise on the Heart of the Lion|r] from him|r << Hunter
@@ -46,7 +47,7 @@ step << Mage/Hunter/Priest/Paladin/Warrior
     >>You will get the rest of your runes very soon
     .target Rune Broker
     .skipgossip
-step << Mage/Hunter/Priest/Paladin/Warrior
+step << Mage/Hunter/Priest/Paladin/Warrior/Warlock
     #sticky
     #optional
     .use 205947 << Priest --Prophecy of a Desecrated Citadel
@@ -55,12 +56,14 @@ step << Mage/Hunter/Priest/Paladin/Warrior
     .use 203746 << Mage --Spell Notes: Living Flame
     .use 209852 << Hunter --Rune of Kill Command
     .use 226401 << Hunter --Treatise on the Heart of the Lion
+    .use 228797 << Warlock --Grimoire of Fel Armor
     .train 402852 >> Use the |T135975:0|t[|cRXP_FRIENDLY_Prophecy of a Desecrated Citadel|r] to train |T237570:0|t[Homunculi] << Priest
     .train 407798 >> Use the |T133745:0|t[|cRXP_FRIENDLY_Testament of Martyrdom|r] to train |T135961:0|t[Seal of Martyrdom], |cRXP_WARN_use it as your primary Seal|r << Paladin
     .train 425447 >> Use the |T134419:0|t[|cRXP_FRIENDLY_Rune of Frenzied Assault|r] << Warrior
     .train 401768 >> Use the |T134939:0|t[|cRXP_FRIENDLY_Spell Notes: Living Flame|r] << Mage
     .train 410111 >> Use the |T134419:0|t[|cRXP_FRIENDLY_Rune of Kill Command|r] << Hunter
     .train 409580 >> Use the |T133739:0|t[|cRXP_FRIENDLY_Treatise on the Heart of the Lion|r] to train |T132185:0|t[Heart of the Lion] << Hunter
+    .train 403619 >> Use the |T133733:0|t[|cRXP_FRIENDLY_Grimoire of Fel Armor|r] to train |T136156:0|t[Fel Armor] << Warlock
     .engrave 7 >> Engrave |T236174:0|t[Kill Shot] on your pants << Hunter
     .engrave 7 >> Engrave |T135820:0|t[Living Flame] on your pants << Mage
     .engrave 7 >> Engrave |T237570:0|t[Homunculi] on your pants << Priest
@@ -70,6 +73,10 @@ step << Hunter
     #optional
     #sticky
     .aura 409583 >> Remember to activate your |T132185:0|t[Heart of the Lion]
+step << Warlock
+    #optional
+    #sticky
+    .aura 403619 >> |cRXP_WARN_Make sure you remember to activate your|r |T136156:0|t[Fel Armor]
 step
     #label WolfMeat
     .goto 1426,29.529,73.286,0
@@ -105,8 +112,7 @@ step << Warrior/Mage/Warlock/Hunter
     >>|cRXP_WARN_MAKE SURE NOT TO VENDOR GEAR THAT CAN BE EQUIPPED|r
     .vendor >>|cRXP_BUY_Vendor trash and buy the|r |T134419:0|t[|cRXP_FRIENDLY_Rune of Victory Rush|r] << Warrior
     .vendor >>|cRXP_BUY_Vendor trash and buy all of the key AoE runes|r << Mage
-    .vendor >>|cRXP_BUY_Vendor trash and buy all of the following runes:|r << Hunter
-    .vendor >>|cRXP_BUY_Vendor trash and buy all of the following runes:|r << Warlock
+    .vendor >>|cRXP_BUY_Vendor trash and buy all of the following runes:|r << Hunter/Warlock
     .collect 204806,1 << Warrior --Rune of Victory Rush
     .collect 208799,1 << Mage --Spell Notes: Living Bomb
     .collect 203748,1 << Mage --Spell Notes: Burnout
@@ -116,11 +122,11 @@ step << Warrior/Mage/Warlock/Hunter
     .collect 210818,1 << Hunter --Rune of Lone Wolf
     .collect 213124,1 << Hunter --Rune of Close Combat
     .collect 226252,1 << Hunter --Rune of the Guerrilla
+    .collect 216770,1 << Hunter --Treatise on Aspect of the Viper
     .collect 205215,1 << Warlock --Rune of Tactics
     .collect 210824,1 << Warlock --Rune of the Pact
     .collect 211477,1 << Warlock --Rune of Incinerate
     .collect 205230,1 << Warlock --Rune of Haunting
-    .collect 228797,1 << Warlock --Grimoire of Fel Armor
     >> Ice Lance is only useful so you can turn in a quest later << Mage
     >>|cRXP_WARN_You will get the rest of your runes later|r
     .target Rune Broker
@@ -135,11 +141,11 @@ step << Warrior/Mage/Hunter
     .train 410122 >> Use the |T134419:0|t[|cRXP_FRIENDLY_Rune of Lone Wolf|r] to train |T132266:0|t[Lone Wolf] << Hunter
     .train 416086 >> Use the |T134419:0|t[|cRXP_FRIENDLY_Rune of Close Combat|r] to train |T132394:0|t[Meele Specialist] << Hunter
     .train 440563 >> Use the |T134419:0|t[|cRXP_FRIENDLY_Rune of Guerrilla|r] to train |T132171:0|t[Hit and Run] << Hunter
+    .train 415423 >> Use the |T133739:0|t[|cRXP_FRIENDLY_Treatise on Aspect of the Viper to train |T132160:0|t[Aspect of the Viper]|r] << Hunter
     .train 416009 >> Use the |T134419:0|t[|cRXP_FRIENDLY_Rune of Tactics|r] to train |T136150:0|t[Demonic Tactics] << Warlock
     .train 425476 >> Use the |T134419:0|t[|cRXP_FRIENDLY_Rune of the Pact|r] to train |T237562:0|t[Demonic Pact] << Warlock
-    .train 211477 >> Use the |T134419:0|t[|cRXP_FRIENDLY_Rune of Incinerate|r] to train |T135789:0|t[Incinerate] << Warlock
+    .train 416015 >> Use the |T134419:0|t[|cRXP_FRIENDLY_Rune of Incinerate|r] to train |T135789:0|t[Incinerate] << Warlock
     .train 403919 >> Use the |T134419:0|t[|cRXP_FRIENDLY_Rune of Haunting|r] to train |T236298:0|t[Haunt] << Warlock
-    .train 403619 >> Use the |T133733:0|t[Grimoire of Fel Armor] to train |T136156:0|t[Fel Armor] |cRXP_WARN_use it as your main armor spell|r << Warlock
     .use 208799 << Mage --Spell Notes: Living Bomb
     .use 203748 << Mage --Spell Notes: Burnout
     .use 225690 << Mage --Spell Notes: Frozen Orb
@@ -147,12 +153,12 @@ step << Warrior/Mage/Hunter
     .use 210818 << Hunter --Rune of Lone Wolf
     .use 213124 << Hunter --Rune of Close Combat
     .use 226252 << Hunter --Rune of the Guerrilla
+    .use 216770 << Hunter --Treatise on Aspect of the Viper
     .use 204806 << Warrior --Rune of Victory Rush
     .use 205215 << Warlock --Rune of Tactics
     .use 210824 << Warlock --Rune of the Pact
     .use 211477 << Warlock --Rune of Incinerate
     .use 205230 << Warlock --Rune of Haunting
-    .use 228797 << Warlock --Grimoire of Fel Armor
 step << Mage
     #season 2
     .goto Dun Morogh,30.087,71.563

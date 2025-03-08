@@ -19,6 +19,7 @@ step
     .accept 83137 >>Accept When Opportunity Explodes
     .target Renzik "The Shiv"
 step
+    .zoneskip 2214
     .isQuestTurnedIn 78546
     .goto 2248,37.60,72.64
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Oathsworn Earthen|r.
@@ -158,7 +159,7 @@ step
     .gossipoption 123518 >>Talk to |cRXP_FRIENDLY_Zirdo|r.
     .timer 17,Roleplay
 step
-    .goto 2214,76.69,79.13
+    .goto 2214,72.54,79.13
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Zirdo|r.
     .complete 83143,1 --1/1 Begin the tour
     .target Zirdo
@@ -217,10 +218,10 @@ step
     .timer 15,Roleplay
 step
     #loop
-    .goto 2214,70.93,82.88,30,0
-    .goto 2214,70.31,81.12,35,0
-    .goto 2214,68.07,83.52,35,0
-    .goto 2214,69.95,85.88,35,0
+    .goto 2214,70.93,82.88,45,0
+    .goto 2214,70.31,81.12,45,0
+    .goto 2214,68.07,83.52,45,0
+    .goto 2214,69.95,85.88,45,0
     >>Kill |cRXP_ENEMY_Giant Gorewalker|r and |cRXP_ENEMY_Forming Pusglob|r
     .complete 83144,2 --2/2 Giant Gorewalker slain
     .mob +Giant Gorewalker
@@ -376,7 +377,7 @@ step
     .target +Orweyna
     .turnin 85444 >>Turn in Found Family
     .accept 83148 >>Accept X-Treme Chill
-    .timer 5,Roleplay
+    .timer 6,Roleplay
     .goto 2214,70.53,88.75
     .target +Monte Gazlowe
 step
@@ -484,12 +485,13 @@ step
     .complete 83151,1 --1/1 Speak to Gazlowe
     .target Monte Gazlowe
     .skipgossipid 123805
--- step
---     .goto 2214,70.33,89.59
---     >>|Tinterface/cursor/crosshair/driver.blp:20|tClick on |cRXP_PICK_Pamsy's Rocketboard|r
---     .complete 83151,2 --1/1 Ride Pamsy's Rocketboard (Optional)
---     .timer 20,RP
---     .target Pamsy's Rocketboard
+step
+    #completewith next
+    .goto 2214,70.33,89.59,0,0
+    >>|Tinterface/cursor/crosshair/driver.blp:20|tClick on |cRXP_PICK_Pamsy's Rocketboard|r |cRXP_WARN_(Optional)|r
+    .complete 83151,2 --1/1 Ride Pamsy's Rocketboard (Optional)
+    .timer 20,RP
+    .target Pamsy's Rocketboard
 step
     .goto 2214,72.96,73.21
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Stelliya|r.
@@ -553,11 +555,12 @@ step
     .complete 83096,4 --1/1 Speak to Smaks Topskimmer
     .target Smaks Topskimmer
     .skipgossipid 131276
+    .skipgossipid 131311
 step
     .goto 2346,42.68,51.18
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Gas Grimeshank|r
     .complete 83096,3 --1/1 Speak to Gas Grimeshank
-    .timer 24,Roleplay
+    .timer 25,Roleplay
     .target Gas Grimeshank
     .skipgossipid 131277
 step
@@ -570,7 +573,7 @@ step
     #completewith next
     .goto 2346,39.80,53.04
     .vehicle >>|Tinterface/cursor/crosshair/driver.blp:20|tClick on the |cRXP_PICK_Gramps|r
-    .timer 37,RP
+    .timer 37,Roleplay
 step
     .goto 2346,45.21,42.12
     >>|cRXP_WARN_Wait for the roleplay.|r
@@ -711,13 +714,13 @@ step
     .accept 83168 >>Accept A Trail of Black Blood
     .target Orweyna
 step
-    .isQuestAvailable account 86618
+    .isQuestAvailable account,87581
     .goto 2346,43.26,59.33
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Gas Grimeshank|r
     .accept 87581 >>Accept No More Walkin' Here
     .target Gas Grimeshank
 step
-    .isQuestAvailable account 86618
+    .isOnQuest 84352,87581
     #completewith next
     #label NoMoreWalkinHere
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Nanny Talullah|r
@@ -725,7 +728,7 @@ step
     .accept 86618 >>Accept License Not Required
     .target Nanny Talullah
 step
-    .isQuestAvailable account 86618
+    .isQuestAvailable account,86618
     #completewith NoMoreWalkinHere
     .goto 2346,35.40,48.84,15,0
     .goto 2346,36.49,46.12,15,0
@@ -735,7 +738,7 @@ step
     .goto 2346,37.78,46.73,5,0
     .goto 2346,38.11,47.25,5 >>Climb the stairs of the house
 step
-    .isQuestAvailable account 86618
+    .isOnQuest 84352,87581
     #requires NoMoreWalkinHere
     .goto 2346,37.42,48.85
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Nanny Talullah|r
@@ -748,25 +751,7 @@ step
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Nanny Talullah|r
     .complete 86618,1 --1/1 Talk to Nanny Talullah
     .target Nanny Talullah
-    .skipgossipid 131561
-step
-    .isOnQuest 86618
-    #hidewindow
-    #completewith next
-    #label GetInG99Breakneck
-    .complete 86618,2 --1/1 Get in the G-99 Breakneck
-step
-    .isOnQuest 86618
-    #completewith GetInG99Breakneck
-    .goto 2346,37.31,49.09
-    >>|TInterface/cursor/crosshair/interact.blp:20|tClick on the |cRXP_PICK_Escape Chains|r
-    .complete 86618,3 --1/1 Use the escape chains to reach the streets of Undermine (Optional)
-step
-    .isOnQuest 86618
-    #requires GetInG99Breakneck
-    .goto 2346,36.90,50.03
-    >>Use the |T1408996:0|t[G-99 Breakneck] button (zone button)
-    .complete 86618,2 --1/1 Get in the G-99 Breakneck
+    .skipgossipid 132619
 step
     #title |cFFFCDC00Follow the arrow|r
     .goto 2346,33.46,48.27
@@ -862,8 +847,8 @@ step
     .goto 2346,30.71,39.47
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Baron Revilgaz|r
     .turnin 83170 >>Turn in Not Again!
-    .target Baron Revilgaz
     .turnin 83171 >>Turn in Eye Sores for Sore Eyes
+    .target Baron Revilgaz
 step
     .goto 2346,30.79,39.29
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Renzik "The Shiv"|r
@@ -889,12 +874,6 @@ step
     .complete 86618,6 --1/1 Exit the G-99 Breakneck and install a turbo at the D.R.I.V.E.
     .target Mobber
     .skipgossipid 125367
-step
-    .isOnQuest 86618
-    #completewith next
-    >>Use the |T1408996:0|t[G-99 Breakneck] button (zone button)
-    >>Drive around and drift (hold space) to gain Turbo (or pick up cans). Use the |T4548870:0|t[Boost] (1) when you have enough Turbo.
-    .complete 86618,7 --1/1 Get back in the G-99 Breakneck and activate your boost
 step
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Renzik "The Shiv"|r and |cRXP_FRIENDLY_Monte Gazlowe|r
     .turnin 83172 >>Turn in Black Blood Baton Pass
@@ -1000,7 +979,7 @@ step
     .accept 83114 >>Accept Red Tape
     .target Monte Gazlowe
 step
-    .isQuestAvailable account 86535
+    .isQuestAvailable account,86535
     .goto 2346,27.67,54.33
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Rustol|r
     .accept 86535 >>Accept Test Run
@@ -1036,7 +1015,7 @@ step
     .goto 2346,17.79,50.79
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to the |cRXP_FRIENDLY_Customs Agents|r. Defeat the ones that turn hostile
     .complete 83114,2 --4/4 Customs Agents convinced to leave
-    .timer 17,RP
+    .timer 17,Roleplay
     .target Custom Agent
     .skipgossipid 124207
     .skipgossipid 124208
@@ -1048,11 +1027,6 @@ step
     .turnin 83114 >>Turn in Red Tape
     .accept 83115 >>Accept In the Mix
     .target Monte Gazlowe
-step
-    .isOnQuest 86618
-    #completewith next
-    >>Drive around and drift (hold space) to gain Turbo (boost meter).
-    .complete 86618,8 --30/30 Regain boost meter by drifting
 step
     #completewith next
     #label FindNoggenfoggerInVatworks
@@ -1155,12 +1129,6 @@ step
     .goto 2346,27.86,70.82,5,0
     .goto 2346,29.02,69.64,5 >>Leave the laboratory
 step
-    .isOnQuest 86618
-    #requires ChasingaLeadA
-    #completewith next
-    >>Drive around and drift (hold space) to gain Turbo (boost meter).
-    .complete 86618,8 --30/30 Regain boost meter by drifting
-step
     #requires ChasingaLeadA
     .goto 2346,46.08,78.56
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Monte Gazlowe|r
@@ -1189,7 +1157,6 @@ step
     .use 226358
 step
     #title |cFFFCDC00Avoid the |cFFFF5722Hyenas|r|r. Schedule (1/3)
-    .goto 2346,46.82,83.82,10,0
     .goto 2346,46.6,86.1
     >>|TInterface/cursor/crosshair/interact.blp:20|tClick on the |cRXP_PICK_Employee Schedule|r
     .complete 83118,1,1 --1/3 Employee Schedule
@@ -1205,6 +1172,7 @@ step
     >>|TInterface/cursor/crosshair/interact.blp:20|tClick on the |cRXP_PICK_Employee Schedule|r
     .complete 83118,1 --3/3 Employee Schedule
 step
+    #title |cFFFCDC00Avoid the |cFFFF5722Hyenas|r|r
     #loop
     .goto 2346,44.95,88.03,25,0
     .goto 2346,50.19,86.74,20,0
@@ -1242,13 +1210,6 @@ step
     .turnin 83120 >>Turn in Stealing the Keys
     .accept 83933 >>Accept The Kaja'Coast
     .target Monte Gazlowe
-step
-    .isOnQuest 86618
-    >>Drive around and drift (hold space) to gain Turbo (boost meter).
-    .complete 86618,8 --30/30 Regain boost meter by drifting
-step
-    .isOnQuest 86618
-    #include RestedXP The War Within\Unlock G-99 Breakneck@UnlockG99BreakneckB-UnlockG99BreakneckC
 step
     .goto 2346,18.80,52.21
     #title |cFFFCDC00Follow the arrow|r
@@ -1461,7 +1422,6 @@ step
     #title |cFFFCDC00Follow the arrow|r
     .complete 83125,3 --1/1 Meet Gazlowe at the Vatworks
 step
-    .goto 2346,25.03,53.02,15,0
     .goto 2346,29.22,69.55
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Monte Gazlowe|r
     .turnin 83125 >>Turn in Price Hike
@@ -1707,6 +1667,7 @@ RXPGuides.RegisterGuide([[
 #subgroup 11.1 Underground Campaign (80)
 #name e) Chapter 5 - Ignite the Fuel of Change
 #displayname |cRXP_WARN_Chapter 5|r - Ignite the Fuel of Change
+#next f) Chapter 6 - Homecoming
 #subweight 4.6
 
 -----------------------------------------------------
@@ -2248,12 +2209,146 @@ step
     .goto 2346,43.61,51.09
     >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Monte Gazlowe|r
     .turnin 85780 >>Turn in Right Where We Want Him
-    .accept 86204 >>Accept Liberation of Undermine: The House Loses
     .target Monte Gazlowe
 
 -----------------------------------------------------
 --- END CHAPTER 5
 -----------------------------------------------------
+]])
+
+RXPGuides.RegisterGuide([[
+#df
+#version 3
+#group RestedXP The War Within
+#subgroup 11.1 Underground Campaign (80)
+#name f) Chapter 6 - Homecoming
+#displayname |cRXP_WARN_Chapter 6|r - Homecoming
+#subweight 4.6
+
+step
+    .goto 2346,43.61,51.09
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Monte Gazlowe|r.
+    .accept 86204 >>Accept Liberation of Undermine: The House Loses
+    .target Monte Gazlowe
+step
+    .goto 2346,43.61,51.09
+    >>Kill |cRXP_ENEMY_Chome King Gallywix|r inside the Liberation of Undermine raid
+    .complete 86204,1 --1/1 Chrome King Gallywix defeated
+step
+    #completewith next
+    #label LiberationOfThingsLeft
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Marin Noggenfogger|r.
+    .turnin 86204 >>Turn in Liberation of Undermine: The House Loses
+    .accept 87321 >>Accept Things Left Undone
+    .target Marin Noggenfogger
+step
+    #completewith LiberationOfThingsLeft
+    #title |cFFFCDC00Enter the laboratory|r
+    .goto 2346,29.00,69.66,5 >>Enter the laboratory
+step
+    #requires LiberationOfThingsLeft
+    .goto 2346,27.37,70.97
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Marin Noggenfogger|r.
+    .turnin 86204 >>Turn in Liberation of Undermine: The House Loses
+    .accept 87321 >>Accept Things Left Undone
+    .target Marin Noggenfogger
+step
+    #completewith next
+    #label ThingsSettledDust
+    .goto 2346,42.59,51.57,0,0
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Monte Gazlowe|r.
+    .turnin 87321 >>Turn in Things Left Undone
+    .accept 85190 >>Accept Settled Dust
+    .target Monte Gazlowe
+step
+    #completewith ThingsSettledDust
+    #title |cFFFCDC00Leave the laboratory|r
+    .goto 2346,27.07,71.21,5,0
+    .goto 2346,27.41,70.83,5,0
+    .goto 2346,27.86,70.82,5,0
+    .goto 2346,29.02,69.64,5 >>Leave the laboratory
+step
+    #requires ThingsSettledDust
+    .goto 2346,42.99,50.87,10,0
+    .goto 2346,42.44,50.11,10,0
+    .goto 2346,42.59,51.57
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Monte Gazlowe|r.
+    .turnin 87321 >>Turn in Things Left Undone
+    .accept 85190 >>Accept Settled Dust
+    .target Monte Gazlowe
+step
+    .goto 2346,42.59,51.57
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Gazlowe|r.
+    .complete 85190,1 --1/1 Speak to Gazlowe
+    .target Gazlowe
+    .skipgossipid 131839
+step
+    .goto 2346,42.89,52.11
+    >>|TInterface/cursor/crosshair/interact.blp:20|tClick on the |cRXP_PICK_Portal to Westfall|r.
+    .complete 85190,3 --1/1 Enter the Portal to Westfall
+step
+    #title |cFFFCDC00Follow the arrow|r
+    .goto 52,30.03,86.05
+    .complete 85190,4 --1/1 Meet Mathias Shaw in Westfall
+step
+    .goto 52,30.03,86.05
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Master Mathias Shaw|r.
+    .turnin 85190 >>Turn in Settled Dust
+    .accept 85191 >>Accept Cut After Cut
+    .target Master Mathias Shaw
+step
+    .goto 52,30.16,86.39
+    >>|TInterface/cursor/crosshair/interact.blp:20|tClick on the |cRXP_PICK_Well-Worn Throwing Knives|r.
+    .complete 85191,1,1 --1/3 Renzik's belongings collected
+step
+    .goto 52,29.66,85.39
+    >>|TInterface/cursor/crosshair/interact.blp:20|tClick on the |cRXP_PICK_Unused Fishing Gear|r.
+    .complete 85191,1,2 --2/3 Renzik's belongings collected
+step
+    .goto 52,30.56,85.96
+    >>|TInterface/cursor/crosshair/interact.blp:20|tClick on the |cRXP_PICK_Old Copy of "Undermine Weekly"|r.
+    .complete 85191,1 --3/3 Renzik's belongings collected
+step
+    .goto 52,30.02,86.04
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Master Mathias Shaw|r.
+    .turnin 85191 >>Turn in Cut After Cut
+    .accept 85192 >>Accept Coming Home
+    .target Master Mathias Shaw
+step
+    .goto 2346,40.03,25.62
+    >>|TInterface/cursor/crosshair/interact.blp:20|tClick on the |A:Dungeon:24:24|a|cRXP_PICK_Portal to Undermine|r
+    .complete 85192,1 --1/1 Take the portal to Undermine (Optional)
+step
+    #title |cFFFCDC00Follow the arrow|r
+    .goto 2346,39.12,23.26
+    .complete 85192,2 --1/1 Meet Gazlowe on the Scrapshop's upper stairs
+step
+    .goto 2346,39.12,23.26
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Monte Gazlowe|r.
+    .complete 85192,3 --1/1 Take Renzik's ashes
+    .target Monte Gazlowe
+    .skipgossipid 131347
+step
+    .goto 2346,39.13,23.55
+    >>Use the |T571694:0|t[|cRXP_WARN_ExtraActionButton|r].
+    .complete 85192,4 --1/1 Spread Renzik's ashes
+step
+    .goto 2346,39.12,23.28
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Monte Gazlowe|r.
+    .turnin 85192 >>Turn in Coming Home
+    .accept 87297 >>Accept Cashing the Check
+    .target Monte Gazlowe
+step
+    .goto 2346,43.56,51.28
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Grimla|r.
+    .complete 87297,1 --1/1 Speak to Grimla
+    .target Grimla
+    .skipgossipid 132237
+step
+    .goto 2346,43.63,51.26
+    >>|Tinterface/worldmap/chatbubble_64grey.blp:20|tTalk to |cRXP_FRIENDLY_Monte Gazlowe|r.
+    .turnin 87297 >>Turn in Cashing the Check
+    .target Monte Gazlowe
 ]])
 
 RXPGuides.RegisterGuide([[
