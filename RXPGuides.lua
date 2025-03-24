@@ -670,7 +670,7 @@ local function evaluateQuestChoices(questID, numChoices, GetQuestItemInfo, GetQu
 
             if itemData then
                 -- Returns nil if item not applicable
-                itemData.comparisons = addon.itemUpgrades:CompareItemWeight(itemLink) or {}
+                itemData.comparisons = addon.itemUpgrades:CompareStatWeight(itemLink) or {}
                 itemData.isUsable = isUsable
 
                 options[i] = itemData
