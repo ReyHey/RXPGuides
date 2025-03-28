@@ -459,11 +459,11 @@ local function TooltipSetItem(tooltip, ...)
 
     -- Exclude addon text when looking at an equipped item
     if IsEquippedItem(itemLink) then return end
-
-    local statComparisons = addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
     local itemData = addon.itemUpgrades:GetItemData(itemLink, tooltip)
 
     if not itemData then return end
+
+    local statComparisons = addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
 
     -- This doesn't work for grey/white weapons as they have 0 weight until comparison against a slot
     -- If no stat comparisons, then return the weight without ratio
@@ -473,7 +473,8 @@ local function TooltipSetItem(tooltip, ...)
             if itemData and itemData.totalWeight and itemData.totalWeight > 0 then
                 tooltip:AddLine(fmt("%s - %s", addon.title, _G.ITEM_UPGRADE))
 
-                tooltip:AddLine(fmt("  Total EP: %s", addon.Round(itemData.totalWeight, 2)))
+                -- TODO Remove "Stat"
+                tooltip:AddLine(fmt("  Total Stat EP: %s", addon.Round(itemData.totalWeight, 2)))
             end
         end
 
@@ -495,34 +496,35 @@ local function TooltipSetItem(tooltip, ...)
         else
             ratioText = prettyPrintRatio(data['Ratio'])
         end
-        -- TODO handle range slot DPS calculation
-        if data.itemEquipLoc and IsMeleeSlot(data.itemEquipLoc) then
+    end
 
-            if data.itemEquipLoc == 'INVTYPE_WEAPONOFFHAND' then
-                tinsert(lines,
-                        fmt("  %s: %s / +%s EP (%s)", data['ItemLink'] or _G.UNKNOWN, ratioText,
-                            addon.Round(data.WeightIncrease, 2), _G.INVTYPE_WEAPONOFFHAND))
-            elseif data.itemEquipLoc == 'INVTYPE_2HWEAPON' then
-                tinsert(lines,
-                        fmt("  %s: %s / +%s EP (%s)", data['ItemLink'] or _G.UNKNOWN, ratioText,
-                            addon.Round(data.WeightIncrease, 2), _G.INVTYPE_2HWEAPON))
-            elseif data.itemEquipLoc == 'INVTYPE_WEAPONMAINHAND' then
-                tinsert(lines,
-                        fmt("  %s: %s / +%s EP (%s)", data['ItemLink'] or _G.UNKNOWN, ratioText,
-                            addon.Round(data.WeightIncrease, 2), _G.INVTYPE_WEAPONMAINHAND))
-            else
-                tinsert(lines,
-                        fmt("  %s: %s / +%s EP (%s)", data['ItemLink'] or _G.UNKNOWN, ratioText,
-                            addon.Round(data.WeightIncrease, 2), data.itemEquipLoc))
-            end
-        elseif data.ItemLink ~= _G.EMPTY then
-            tinsert(lines, fmt("  %s: %s / +%s EP", data['ItemLink'] or _G.UNKNOWN, ratioText,
-                               addon.Round(data.WeightIncrease, 2)))
+    -- TODO handle range slot DPS calculation
+    -- TODO handle multi-slot
+    local weaponSlotComparisons = addon.itemUpgrades:GetMeleeSlotComparisonNames()
+
+    for _, data in ipairs(IsMeleeSlot(itemData.itemEquipLoc) and { 16, 17 } or {}) do
+        print("IsMeleeSlot, data.itemEquipLoc", data.itemEquipLoc)
+        if data.itemEquipLoc == 'INVTYPE_WEAPONOFFHAND' then
+            tinsert(lines,
+                    fmt("  %s: %s / +%s EP (%s)", data['ItemLink'] or _G.UNKNOWN, ratioText,
+                        addon.Round(data.WeightIncrease, 2), _G.INVTYPE_WEAPONOFFHAND))
+        elseif data.itemEquipLoc == 'INVTYPE_2HWEAPON' then
+            tinsert(lines,
+                    fmt("  %s: %s / +%s EP (%s)", data['ItemLink'] or _G.UNKNOWN, ratioText,
+                        addon.Round(data.WeightIncrease, 2), _G.INVTYPE_2HWEAPON))
+        elseif data.itemEquipLoc == 'INVTYPE_WEAPONMAINHAND' then
+            tinsert(lines,
+                    fmt("  %s: %s / +%s EP (%s)", data['ItemLink'] or _G.UNKNOWN, ratioText,
+                        addon.Round(data.WeightIncrease, 2), _G.INVTYPE_WEAPONMAINHAND))
+        else
+            tinsert(lines,
+                    fmt("  %s: %s / +%s EP (%s)", data['ItemLink'] or _G.UNKNOWN, ratioText,
+                        addon.Round(data.WeightIncrease, 2), data.itemEquipLoc))
         end
     end
 
     if addon.settings.profile.enableTotalEP then
-        if itemData then tinsert(lines, fmt("  Total EP: %s", addon.Round(itemData.totalWeight, 2))) end
+        tinsert(lines, fmt("  Total Stat EP: %s", addon.Round(itemData.totalWeight, 2)))
     end
 
     if #lines > 0 then
@@ -1146,7 +1148,6 @@ function addon.itemUpgrades:GetMeleeSlotComparisonNames()
         equippedItemData = addon.itemUpgrades:GetItemData(equippedItemLink, nil)
 
         -- Exclude Shields and Held
-        -- TODO If weapon slot, use that instead of what's equippable in that slot
         if equippedItemData and IsMeleeSlot(equippedItemData.itemEquipLoc) then
             -- print("meleeSlotNum", meleeSlotNum, equippedItemData.itemEquipLoc)
 
@@ -1167,8 +1168,7 @@ end
 function addon.itemUpgrades:CalculateWeaponWeight(equippedData, comparedData, slotComparisonId)
     local equippedWeight = equippedData.totalWeight
     local comparedWeight = comparedData.totalWeight
-
-    local weaponSlotComparisons = self:GetMeleeSlotComparisonNames()
+    print("CalculateWeaponWeight", slotComparisonId)
 
     for suffix, data in pairs(equippedData.dpsWeights or {}) do
         if slotComparisonId == SPEED_SUFFIX_SLOT_MAP[suffix] then
@@ -1188,7 +1188,6 @@ end
 -- return ratio, weight, debugMsg
 function addon.itemUpgrades:GetEquippedComparisonRatio(equippedItemLink, comparedData, slotComparisonId)
     if not comparedData or not equippedItemLink then
-        -- print("GetEquippedComparisonRatio: not comparedData or not equippedItemLink ")
         return nil, -1, "invalid parameters"
     end
 
@@ -1196,13 +1195,19 @@ function addon.itemUpgrades:GetEquippedComparisonRatio(equippedItemLink, compare
     local equippedData = self:GetItemData(equippedItemLink, nil)
 
     if not equippedData then
-        -- print("GetEquippedComparisonRatio: not equippedData")
         return nil, -1, "not equippedData"
     end
 
+    local equippedWeight, comparedWeight
+
     -- _G.INVSLOT_RANGED, _G.INVSLOT_OFFHAND, _G.INVSLOT_MAINHAND
     -- MH / OH have more complex handling, requires DPS calculations here
-    local equippedWeight, comparedWeight = self:CalculateWeaponWeight(equippedData, comparedData, slotComparisonId)
+    if IsWeaponSlot(equippedData.itemEquipLoc) then
+        equippedWeight, comparedWeight = self:CalculateWeaponWeight(equippedData, comparedData, slotComparisonId)
+    else
+        equippedWeight = equippedData.totalWeight
+        comparedWeight = comparedData.totalWeight
+    end
 
     if equippedWeight == 0 or comparedWeight == 0 then
         -- Prevent division by 0
@@ -1219,7 +1224,6 @@ function addon.itemUpgrades:GetEquippedComparisonRatio(equippedItemLink, compare
         return 0, -1, 'equal'
     end
 
-    -- print("GetEquippedComparisonRatio nil")
     return nil, -1, _G.UNKNOWN
 end
 
@@ -1253,8 +1257,14 @@ function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
     local slotNamesToCompare = {}
 
     if type(session.equippableSlots[comparedData.itemEquipLoc]) == "table" then
-        -- print("is multi-slot", comparedData.itemEquipLoc)
+        print("is multi-slot", comparedData.itemEquipLoc)
         slotNamesToCompare = session.equippableSlots[comparedData.itemEquipLoc]
+    elseif IsMeleeSlot(comparedData.itemEquipLoc) then
+        print("CompareStatWeight IsMeleeSlot", comparedData.itemEquipLoc)
+        slotNamesToCompare = addon.itemUpgrades:GetMeleeSlotComparisonNames()
+    elseif IsWeaponSlot(comparedData.itemEquipLoc) then
+        -- TODO ranged weapon DPS
+        slotNamesToCompare[comparedData.itemEquipLoc] = _G.INVSLOT_RANGED
     else
         slotNamesToCompare[comparedData.itemEquipLoc] = session.equippableSlots[comparedData.itemEquipLoc]
     end
@@ -1262,7 +1272,8 @@ function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
     -- Check applicable not-weapon slots
     -- Will be 1 for most and 1-2 for rings
     for itemEquipLoc, slotId in pairs(slotNamesToCompare) do
-        equippedItemLink = GetInventoryItemLink("player", slotId)
+        print("slotNamesToCompare", "itemEquipLoc", itemEquipLoc, "slotId", slotId)
+        equippedItemLink = GetInventoryItemLink("player", slotId or itemEquipLoc)
 
         -- No equipped item, so anything is an upgrade from no item
         -- 100% looks wrong for a infinitely better upgrade, return nil
@@ -1285,7 +1296,7 @@ function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
                 ['TotalWeight'] = comparedData.totalWeight,
                 ['WeightIncrease'] = weightIncrease or 0,
                 ['ItemLink'] = equippedItemLink or _G.UNKNOWN, -- Pass "Unknown" for debugging
-                ['itemEquipLoc'] = itemEquipLoc, -- Is actually slotID for rings/trinkets
+                ['itemEquipLoc'] = itemEquipLoc, -- Is actually slotID for rings/trinkets/weapons
                 ['debug'] = addon.settings.profile.debug and debug
             })
         end
