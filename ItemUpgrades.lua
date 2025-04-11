@@ -465,7 +465,6 @@ local function TooltipSetItem(tooltip, ...)
 
     local statComparisons = addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
 
-    -- This doesn't work for grey/white weapons as they have 0 weight until comparison against a slot
     -- If no stat comparisons, then return the weight without ratio
     -- Ignore melee weapons for this, as their weight depends on slot 16-17 values
     if not IsMeleeSlot(itemData.itemEquipLoc) and (not statComparisons or next(statComparisons) == nil) then
@@ -482,44 +481,33 @@ local function TooltipSetItem(tooltip, ...)
     end
 
     local lines = {}
-
     local ratioText
-    for _, data in ipairs(statComparisons) do
-        -- Remove base 100 from percentage
-        -- A 140% upgrade ratio is only a 40% upgrade
-        if data['debug'] or not data['Ratio'] then
-            if addon.settings.profile.debug then
-                ratioText = "(debug) " .. (data['debug'] or _G.SPELL_FAILED_ERROR)
-            else
-                ratioText = _G.SPELL_FAILED_ERROR
-            end
-        else
-            ratioText = prettyPrintRatio(data['Ratio'])
-        end
-    end
 
-    -- TODO handle range slot DPS calculation
     -- TODO handle multi-slot
-    local weaponSlotComparisons = addon.itemUpgrades:GetMeleeSlotComparisonNames()
+    if IsWeaponSlot(itemData.itemEquipLoc) then
+        local weaponSlotComparisons = addon.itemUpgrades:GetWeaponSlotComparisonNames()
 
-    for _, data in ipairs(IsMeleeSlot(itemData.itemEquipLoc) and { 16, 17 } or {}) do
-        print("IsMeleeSlot, data.itemEquipLoc", data.itemEquipLoc)
-        if data.itemEquipLoc == 'INVTYPE_WEAPONOFFHAND' then
+        for slotNum, _ in ipairs(weaponSlotComparisons) do
+            print("IsMeleeSlot, data.itemEquipLoc", slotNum, itemData.itemEquipLoc)
+
             tinsert(lines,
-                    fmt("  %s: %s / +%s EP (%s)", data['ItemLink'] or _G.UNKNOWN, ratioText,
-                        addon.Round(data.WeightIncrease, 2), _G.INVTYPE_WEAPONOFFHAND))
-        elseif data.itemEquipLoc == 'INVTYPE_2HWEAPON' then
-            tinsert(lines,
-                    fmt("  %s: %s / +%s EP (%s)", data['ItemLink'] or _G.UNKNOWN, ratioText,
-                        addon.Round(data.WeightIncrease, 2), _G.INVTYPE_2HWEAPON))
-        elseif data.itemEquipLoc == 'INVTYPE_WEAPONMAINHAND' then
-            tinsert(lines,
-                    fmt("  %s: %s / +%s EP (%s)", data['ItemLink'] or _G.UNKNOWN, ratioText,
-                        addon.Round(data.WeightIncrease, 2), _G.INVTYPE_WEAPONMAINHAND))
-        else
-            tinsert(lines,
-                    fmt("  %s: %s / +%s EP (%s)", data['ItemLink'] or _G.UNKNOWN, ratioText,
-                        addon.Round(data.WeightIncrease, 2), data.itemEquipLoc))
+                    fmt("  %s: %s / +%s EP (%s)", itemData['ItemLink'] or _G.UNKNOWN, ratioText,
+                        addon.Round(itemData.WeightIncrease, 2), itemData.itemEquipLoc))
+        end
+    else
+        -- Not-weapons are easy, direct stat comparisons
+        for _, data in ipairs(statComparisons) do
+            -- Remove base 100 from percentage
+            -- A 140% upgrade ratio is only a 40% upgrade
+            if data['debug'] or not data['Ratio'] then
+                if addon.settings.profile.debug then
+                    ratioText = "(debug) " .. (data['debug'] or _G.SPELL_FAILED_ERROR)
+                else
+                    ratioText = _G.SPELL_FAILED_ERROR
+                end
+            else
+                ratioText = prettyPrintRatio(data['Ratio'])
+            end
         end
     end
 
@@ -1134,11 +1122,16 @@ local WEAPON_SLOT_ANALYSIS = {
     ['INVTYPE_WEAPONOFFHAND'] = {
         ["INVTYPE_WEAPON"] = _G.INVSLOT_OFFHAND,
         ["INVTYPE_WEAPONOFFHAND"] = _G.INVSLOT_OFFHAND
+    },
+    ["INVTYPE_RANGED"] = {
+        ["INVTYPE_THROWN"] = _G.INVSLOT_RANGED,
+        ["INVTYPE_RANGEDRIGHT"] = _G.INVSLOT_RANGED,
+        ["INVTYPE_RANGED"] = _G.INVSLOT_RANGED
     }
-    -- INVTYPE_WEAPON handled dynamically by GetMeleeSlotComparisonNames below
+    -- INVTYPE_WEAPON handled dynamically by GetWeaponSlotComparisonNames below
 }
 
-function addon.itemUpgrades:GetMeleeSlotComparisonNames()
+function addon.itemUpgrades:GetWeaponSlotComparisonNames()
     local weaponSlotComparisons = {}
 
     local equippedItemLink, equippedItemData
@@ -1160,6 +1153,8 @@ function addon.itemUpgrades:GetMeleeSlotComparisonNames()
             end
         end
     end
+
+    weaponSlotComparisons[_G.INVSLOT_RANGED] = WEAPON_SLOT_ANALYSIS["INVTYPE_RANGED"]
 
     return weaponSlotComparisons
 end
@@ -1187,16 +1182,12 @@ end
 
 -- return ratio, weight, debugMsg
 function addon.itemUpgrades:GetEquippedComparisonRatio(equippedItemLink, comparedData, slotComparisonId)
-    if not comparedData or not equippedItemLink then
-        return nil, -1, "invalid parameters"
-    end
+    if not comparedData or not equippedItemLink then return nil, -1, "invalid parameters" end
 
     -- Load equipped item into hidden tooltip for parsing
     local equippedData = self:GetItemData(equippedItemLink, nil)
 
-    if not equippedData then
-        return nil, -1, "not equippedData"
-    end
+    if not equippedData then return nil, -1, "not equippedData" end
 
     local equippedWeight, comparedWeight
 
@@ -1259,17 +1250,14 @@ function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
     if type(session.equippableSlots[comparedData.itemEquipLoc]) == "table" then
         print("is multi-slot", comparedData.itemEquipLoc)
         slotNamesToCompare = session.equippableSlots[comparedData.itemEquipLoc]
-    elseif IsMeleeSlot(comparedData.itemEquipLoc) then
-        print("CompareStatWeight IsMeleeSlot", comparedData.itemEquipLoc)
-        slotNamesToCompare = addon.itemUpgrades:GetMeleeSlotComparisonNames()
     elseif IsWeaponSlot(comparedData.itemEquipLoc) then
-        -- TODO ranged weapon DPS
-        slotNamesToCompare[comparedData.itemEquipLoc] = _G.INVSLOT_RANGED
+        print("CompareStatWeight IsMeleeSlot", comparedData.itemEquipLoc)
+        slotNamesToCompare = addon.itemUpgrades:GetWeaponSlotComparisonNames()
     else
         slotNamesToCompare[comparedData.itemEquipLoc] = session.equippableSlots[comparedData.itemEquipLoc]
     end
 
-    -- Check applicable not-weapon slots
+    -- Check applicable slots
     -- Will be 1 for most and 1-2 for rings
     for itemEquipLoc, slotId in pairs(slotNamesToCompare) do
         print("slotNamesToCompare", "itemEquipLoc", itemEquipLoc, "slotId", slotId)
