@@ -468,12 +468,14 @@ local function TooltipSetItem(tooltip, ...)
     -- If no stat comparisons, then return the weight without ratio
     -- Ignore melee weapons for this, as their weight depends on slot 16-17 values
     if not IsMeleeSlot(itemData.itemEquipLoc) and (not statComparisons or next(statComparisons) == nil) then
+        -- TODO What actually uses this?
+
         if addon.settings.profile.enableTotalEP then
             if itemData and itemData.totalWeight and itemData.totalWeight > 0 then
                 tooltip:AddLine(fmt("%s - %s", addon.title, _G.ITEM_UPGRADE))
 
                 -- TODO Remove "Stat"
-                tooltip:AddLine(fmt("  Total Stat EP: %s", addon.Round(itemData.totalWeight, 2)))
+                tooltip:AddLine(fmt("  Total EP: %s", addon.Round(itemData.totalWeight, 2)))
             end
         end
 
@@ -494,11 +496,8 @@ local function TooltipSetItem(tooltip, ...)
                     fmt("  %s: %s / +%s EP (%s)", itemData['ItemLink'] or _G.UNKNOWN, ratioText,
                         addon.Round(itemData.WeightIncrease, 2), itemData.itemEquipLoc))
         end
-    else
-        -- Not-weapons are easy, direct stat comparisons
+    else -- Not-weapons are easy, direct stat comparisons
         for _, data in ipairs(statComparisons) do
-            -- Remove base 100 from percentage
-            -- A 140% upgrade ratio is only a 40% upgrade
             if data['debug'] or not data['Ratio'] then
                 if addon.settings.profile.debug then
                     ratioText = "(debug) " .. (data['debug'] or _G.SPELL_FAILED_ERROR)
@@ -508,6 +507,9 @@ local function TooltipSetItem(tooltip, ...)
             else
                 ratioText = prettyPrintRatio(data['Ratio'])
             end
+
+            tinsert(lines, fmt("  %s: %s / +%s EP", data['ItemLink'] or _G.UNKNOWN, ratioText,
+                               addon.Round(data.WeightIncrease, 2)))
         end
     end
 
