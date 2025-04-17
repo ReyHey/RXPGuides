@@ -455,7 +455,7 @@ local function TooltipSetItem(tooltip, ...)
 
     local _, itemLink = tooltip:GetItem()
     if not itemLink then return end
-    -- print("TooltipSetItem", tooltip:GetName(), itemLink)
+    print("Stack1, TooltipSetItem", tooltip:GetName(), itemLink)
 
     -- Exclude addon text when looking at an equipped item
     if IsEquippedItem(itemLink) then return end
@@ -878,6 +878,7 @@ local function CalculateDPSWeight(itemData, stats)
         end
     end
 
+    print("CalculateDPSWeight, return dpsWeights")
     return dpsWeights
 end
 
@@ -1185,6 +1186,7 @@ end
 -- return ratio, weight, debugMsg
 function addon.itemUpgrades:GetEquippedComparisonRatio(equippedItemLink, comparedData, slotComparisonId)
     if not comparedData or not equippedItemLink then return nil, -1, "invalid parameters" end
+    print("Stack3, GetEquippedComparisonRatio")
 
     -- Load equipped item into hidden tooltip for parsing
     local equippedData = self:GetItemData(equippedItemLink, nil)
@@ -1223,6 +1225,7 @@ end
 -- nil if same item
 -- % change otherwise
 function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
+    print("Stack2, CompareStatWeight")
     local comparedData = self:GetItemData(itemLink, tooltip)
 
     -- Failed to load (wait for next try) or not equippable
@@ -1249,12 +1252,10 @@ function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
     local equippedItemLink, ratio, weightIncrease, debug
     local slotNamesToCompare = {}
 
-    if type(session.equippableSlots[comparedData.itemEquipLoc]) == "table" then
-        print("is multi-slot", comparedData.itemEquipLoc)
-        slotNamesToCompare = session.equippableSlots[comparedData.itemEquipLoc]
-    elseif IsWeaponSlot(comparedData.itemEquipLoc) then
+    if IsWeaponSlot(comparedData.itemEquipLoc) then
         print("CompareStatWeight IsMeleeSlot", comparedData.itemEquipLoc)
-        slotNamesToCompare = addon.itemUpgrades:GetWeaponSlotComparisonNames()
+        -- TODO handle slotId comparison
+        slotNamesToCompare = {} -- addon.itemUpgrades:GetWeaponSlotComparisonNames()
     else
         slotNamesToCompare[comparedData.itemEquipLoc] = session.equippableSlots[comparedData.itemEquipLoc]
     end
@@ -1262,7 +1263,8 @@ function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
     -- Check applicable slots
     -- Will be 1 for most and 1-2 for rings
     for itemEquipLoc, slotId in pairs(slotNamesToCompare) do
-        print("slotNamesToCompare", "itemEquipLoc", itemEquipLoc, "slotId", slotId)
+        --TODO if slotId is table
+        print("CompareStatWeight pairs(slotNamesToCompare)", "itemEquipLoc", itemEquipLoc, "slotId", slotId)
         equippedItemLink = GetInventoryItemLink("player", slotId or itemEquipLoc)
 
         -- No equipped item, so anything is an upgrade from no item
