@@ -483,6 +483,7 @@ local function TooltipSetItem(tooltip, ...)
     end
 
     local lines = {}
+    local epIncrease
     local lineText
 
     -- TODO handle multi-slot
@@ -493,23 +494,25 @@ local function TooltipSetItem(tooltip, ...)
             print("IsMeleeSlot, data.itemEquipLoc", slotNum, itemData.itemEquipLoc)
 
             tinsert(lines,
-                    fmt("  %s: %s / +%s EP (%s)", itemData['ItemLink'] or _G.UNKNOWN, ratioText,
-                        addon.Round(itemData.WeightIncrease, 2), itemData.itemEquipLoc))
+                    fmt("  %s: %s / +%s EP (%s)", itemData['ItemLink'] or _G.UNKNOWN, prettyPrintRatio(data['Ratio'],
+                        addon.Round(itemData.WeightIncrease, 2), itemData.itemEquipLoc)))
         end
     else -- Not-weapons are easy, direct stat comparisons
         for _, data in ipairs(statComparisons) do
+            epIncrease = addon.Round(data.WeightIncrease, 2)
+
+            if epIncrease == 0 then epIncrease = addon.Round(data.WeightIncrease, 4) end
+
             if data['Ratio'] then
                 lineText = fmt("  %s: %s / +%s EP", data['ItemLink'] or _G.UNKNOWN, prettyPrintRatio(data['Ratio']),
-                               addon.Round(data.WeightIncrease, 2))
+                               epIncrease)
             elseif data['ItemLink'] == _G.EMPTY then
-                lineText = fmt("  %s: +%s EP", data['ItemLink'], addon.Round(data.WeightIncrease, 2))
+                lineText = fmt("  %s: +%s EP", data['ItemLink'], epIncrease)
             else -- SPELL_FAILED_ERROR
                 lineText = nil
             end
 
-            if lineText then
-                tinsert(lines, lineText)
-            end
+            if lineText then tinsert(lines, lineText) end
 
             if data['debug'] and addon.settings.profile.debug then tinsert(lines, "\n    -" .. data['debug']) end
         end
@@ -1205,10 +1208,10 @@ function addon.itemUpgrades:GetEquippedComparisonRatio(equippedItemLink, compare
         comparedWeight = comparedData.totalWeight
     end
 
-    if equippedWeight == 0 or comparedWeight == 0 then
-        -- Prevent division by 0
-        -- One of these has no stats, so treat same as empty slot (nil)
-        return nil, -1, _G.NONE
+    if equippedWeight == 0 then
+        return 1.0, comparedWeight, nil
+    elseif comparedWeight == 0 then
+        return nil, 0, _G.EMPTY
     elseif comparedWeight > equippedWeight then
         return addon.Round(comparedWeight / equippedWeight, 2), comparedWeight - equippedWeight, nil
     elseif comparedWeight < equippedWeight then
@@ -1274,6 +1277,7 @@ function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
             ratio = nil
             debug = _G.EMPTY
             equippedItemLink = _G.EMPTY
+            weightIncrease = comparedData.totalWeight
         elseif comparedData.itemLink == equippedItemLink then
             -- Same item, so not an upgrade
             ratio = nil
