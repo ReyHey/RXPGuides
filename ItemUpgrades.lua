@@ -483,7 +483,7 @@ local function TooltipSetItem(tooltip, ...)
     end
 
     local lines = {}
-    local ratioText
+    local lineText
 
     -- TODO handle multi-slot
     if IsWeaponSlot(itemData.itemEquipLoc) then
@@ -498,18 +498,20 @@ local function TooltipSetItem(tooltip, ...)
         end
     else -- Not-weapons are easy, direct stat comparisons
         for _, data in ipairs(statComparisons) do
-            if data['debug'] or not data['Ratio'] then
-                if addon.settings.profile.debug then
-                    ratioText = "(debug) " .. (data['debug'] or _G.SPELL_FAILED_ERROR)
-                else
-                    ratioText = _G.SPELL_FAILED_ERROR
-                end
-            else
-                ratioText = prettyPrintRatio(data['Ratio'])
+            if data['Ratio'] then
+                lineText = fmt("  %s: %s / +%s EP", data['ItemLink'] or _G.UNKNOWN, prettyPrintRatio(data['Ratio']),
+                               addon.Round(data.WeightIncrease, 2))
+            elseif data['ItemLink'] == _G.EMPTY then
+                lineText = fmt("  %s: +%s EP", data['ItemLink'], addon.Round(data.WeightIncrease, 2))
+            else -- SPELL_FAILED_ERROR
+                lineText = nil
             end
 
-            tinsert(lines, fmt("  %s: %s / +%s EP", data['ItemLink'] or _G.UNKNOWN, ratioText,
-                               addon.Round(data.WeightIncrease, 2)))
+            if lineText then
+                tinsert(lines, lineText)
+            end
+
+            if data['debug'] and addon.settings.profile.debug then tinsert(lines, "\n    -" .. data['debug']) end
         end
     end
 
