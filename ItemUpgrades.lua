@@ -954,9 +954,8 @@ function addon.itemUpgrades:GetItemData(itemLink, tooltip)
                                                                                                              itemLink)
 
     -- Not an equippable item
-    if not itemEquipLoc or itemEquipLoc == "" or itemEquipLoc == "INVTYPE_AMMO" or itemEquipLoc == "INVTYPE_BAG" then
-        return
-    end
+    if not itemEquipLoc or itemEquipLoc == "" or itemEquipLoc == "INVTYPE_AMMO" or itemEquipLoc == "INVTYPE_BAG" or
+        itemEquipLoc == "INVTYPE_NON_EQUIP_IGNORE" then return end
 
     -- Parse API stats first before processing tooltip text
     local stats = GetItemStats(itemLink)
@@ -1263,7 +1262,7 @@ function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
     -- Check applicable slots
     -- Will be 1 for most and 1-2 for rings
     for itemEquipLoc, slotId in pairs(slotNamesToCompare) do
-        --TODO if slotId is table
+        -- TODO if slotId is table
         print("CompareStatWeight pairs(slotNamesToCompare)", "itemEquipLoc", itemEquipLoc, "slotId", slotId)
         equippedItemLink = GetInventoryItemLink("player", slotId or itemEquipLoc)
 
