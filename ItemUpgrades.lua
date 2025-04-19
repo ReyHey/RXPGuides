@@ -486,7 +486,6 @@ local function TooltipSetItem(tooltip, ...)
     local epIncrease
     local lineText
 
-    -- TODO handle multi-slot
     if IsWeaponSlot(itemData.itemEquipLoc) then
         local weaponSlotComparisons = addon.itemUpgrades:GetWeaponSlotComparisonNames()
 
@@ -514,7 +513,7 @@ local function TooltipSetItem(tooltip, ...)
 
             if lineText then tinsert(lines, lineText) end
 
-            if data['debug'] and addon.settings.profile.debug then tinsert(lines, "\n    -" .. data['debug']) end
+            if data['debug'] and addon.settings.profile.debug then tinsert(lines, "    -" .. data['debug']) end
         end
     end
 
