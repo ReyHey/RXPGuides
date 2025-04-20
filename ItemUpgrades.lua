@@ -467,9 +467,9 @@ local function TooltipSetItem(tooltip, ...)
 
     -- If no stat comparisons, then return the weight without ratio
     -- Ignore melee weapons for this, as their weight depends on slot 16-17 values
-    if not IsMeleeSlot(itemData.itemEquipLoc) and (not statComparisons or next(statComparisons) == nil) then
+    if not statComparisons or next(statComparisons) == nil then
         -- TODO What actually uses this?
-
+        print("TooltipSetItem Early exit")
         if addon.settings.profile.enableTotalEP then
             if itemData and itemData.totalWeight and itemData.totalWeight > 0 then
                 tooltip:AddLine(fmt("%s - %s", addon.title, _G.ITEM_UPGRADE))
@@ -482,39 +482,49 @@ local function TooltipSetItem(tooltip, ...)
         return
     end
 
+    local weaponSlotComparisons = IsWeaponSlot(itemData.itemEquipLoc) and
+                                      addon.itemUpgrades:GetWeaponSlotComparisonNames() or nil
     local lines = {}
-    local epIncrease
+    local statEPIncrease
     local lineText
 
-    if IsWeaponSlot(itemData.itemEquipLoc) then
-        local weaponSlotComparisons = addon.itemUpgrades:GetWeaponSlotComparisonNames()
+    for l, data in ipairs(statComparisons) do
+        print("TooltipSetItem ipairs(statComparisons) l", l)
+        statEPIncrease = addon.Round(data.WeightIncrease, 2)
 
-        for slotNum, _ in ipairs(weaponSlotComparisons) do
-            print("IsMeleeSlot, data.itemEquipLoc", slotNum, itemData.itemEquipLoc)
+        if statEPIncrease == 0 then statEPIncrease = addon.Round(data.WeightIncrease, 4) end
 
-            tinsert(lines,
-                    fmt("  %s: %s / +%s EP (%s)", itemData['ItemLink'] or _G.UNKNOWN, prettyPrintRatio(data['Ratio'],
-                        addon.Round(itemData.WeightIncrease, 2), itemData.itemEquipLoc)))
-        end
-    else -- Not-weapons are easy, direct stat comparisons
-        for _, data in ipairs(statComparisons) do
-            epIncrease = addon.Round(data.WeightIncrease, 2)
+        if weaponSlotComparisons then
+            print("TooltipSetItem weaponSlotComparisons")
 
-            if epIncrease == 0 then epIncrease = addon.Round(data.WeightIncrease, 4) end
+            for slotNum, d in pairs(weaponSlotComparisons) do
+                print("TooltipSetItem IsMeleeSlot, data.itemEquipLoc", slotNum, itemData.itemEquipLoc, d)
 
+                if data['Ratio'] then
+                    lineText = fmt("  %s: %s / +%s EP", data['ItemLink'] or _G.UNKNOWN, prettyPrintRatio(data['Ratio']),
+                                   statEPIncrease)
+                elseif data['ItemLink'] == _G.EMPTY then
+                    lineText = fmt("  %s: +%s EP", data['ItemLink'], statEPIncrease, slotNum)
+                else -- SPELL_FAILED_ERROR
+                    lineText = nil
+                end
+
+                tinsert(lines, lineText)
+            end
+        else
             if data['Ratio'] then
                 lineText = fmt("  %s: %s / +%s EP", data['ItemLink'] or _G.UNKNOWN, prettyPrintRatio(data['Ratio']),
-                               epIncrease)
+                               statEPIncrease)
             elseif data['ItemLink'] == _G.EMPTY then
-                lineText = fmt("  %s: +%s EP", data['ItemLink'], epIncrease)
+                lineText = fmt("  %s: +%s EP", data['ItemLink'], statEPIncrease)
             else -- SPELL_FAILED_ERROR
                 lineText = nil
             end
 
             if lineText then tinsert(lines, lineText) end
-
-            if data['debug'] and addon.settings.profile.debug then tinsert(lines, "    -" .. data['debug']) end
         end
+
+        if data['debug'] and addon.settings.profile.debug then tinsert(lines, "    -" .. data['debug']) end
     end
 
     if addon.settings.profile.enableTotalEP then
@@ -1256,9 +1266,8 @@ function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
     local slotNamesToCompare = {}
 
     if IsWeaponSlot(comparedData.itemEquipLoc) then
-        print("CompareStatWeight IsMeleeSlot", comparedData.itemEquipLoc)
-        -- TODO handle slotId comparison
-        slotNamesToCompare = {} -- addon.itemUpgrades:GetWeaponSlotComparisonNames()
+        print("CompareStatWeight IsWeaponSlot", comparedData.itemEquipLoc)
+        slotNamesToCompare = addon.itemUpgrades:GetWeaponSlotComparisonNames()
     else
         slotNamesToCompare[comparedData.itemEquipLoc] = session.equippableSlots[comparedData.itemEquipLoc]
     end
