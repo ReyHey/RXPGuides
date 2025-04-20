@@ -455,7 +455,7 @@ local function TooltipSetItem(tooltip, ...)
 
     local _, itemLink = tooltip:GetItem()
     if not itemLink then return end
-    print("Stack1, TooltipSetItem", tooltip:GetName(), itemLink)
+    -- print("Stack1, TooltipSetItem", tooltip:GetName(), itemLink)
 
     -- Exclude addon text when looking at an equipped item
     if IsEquippedItem(itemLink) then return end
@@ -469,7 +469,7 @@ local function TooltipSetItem(tooltip, ...)
     -- Ignore melee weapons for this, as their weight depends on slot 16-17 values
     if not statComparisons or next(statComparisons) == nil then
         -- TODO What actually uses this?
-        print("TooltipSetItem Early exit")
+        print("TooltipSetItem Early exit", itemLink)
         if addon.settings.profile.enableTotalEP then
             if itemData and itemData.totalWeight and itemData.totalWeight > 0 then
                 tooltip:AddLine(fmt("%s - %s", addon.title, _G.ITEM_UPGRADE))
@@ -483,40 +483,38 @@ local function TooltipSetItem(tooltip, ...)
     end
 
     local weaponSlotComparisons = IsWeaponSlot(itemData.itemEquipLoc) and
-                                      addon.itemUpgrades:GetWeaponSlotComparisonNames() or nil
+                                      addon.itemUpgrades:GetWeaponSlotComparisonNames(itemData.itemEquipLoc) or nil
     local lines = {}
     local statEPIncrease
     local lineText
 
-    for l, data in ipairs(statComparisons) do
-        print("TooltipSetItem ipairs(statComparisons) l", l)
-        statEPIncrease = addon.Round(data.WeightIncrease, 2)
+    for _, statsData in ipairs(statComparisons) do
+        statEPIncrease = addon.Round(statsData.WeightIncrease, 2)
 
-        if statEPIncrease == 0 then statEPIncrease = addon.Round(data.WeightIncrease, 4) end
+        if statEPIncrease == 0 then statEPIncrease = addon.Round(statsData.WeightIncrease, 4) end
 
         if weaponSlotComparisons then
-            print("TooltipSetItem weaponSlotComparisons")
-
+            print("TooltipSetItem statEPIncrease", statEPIncrease, statsData['ItemLink'])
             for slotNum, d in pairs(weaponSlotComparisons) do
-                print("TooltipSetItem IsMeleeSlot, data.itemEquipLoc", slotNum, itemData.itemEquipLoc, d)
-
-                if data['Ratio'] then
-                    lineText = fmt("  %s: %s / +%s EP", data['ItemLink'] or _G.UNKNOWN, prettyPrintRatio(data['Ratio']),
+                print("TooltipSetItem weaponSlotComparisons", slotNum, itemData.itemEquipLoc, d)
+                -- TODO loop over slotNum for applicable itemEquipLoc
+                if statsData['Ratio'] then --Stats data
+                    lineText = fmt("  %s Stats: %s / +%s EP", statsData['ItemLink'] or _G.UNKNOWN, prettyPrintRatio(statsData['Ratio']),
                                    statEPIncrease)
-                elseif data['ItemLink'] == _G.EMPTY then
-                    lineText = fmt("  %s: +%s EP", data['ItemLink'], statEPIncrease, slotNum)
+                elseif statsData['ItemLink'] == _G.EMPTY then
+                    lineText = fmt("  %s Stats: +%s EP", statsData['ItemLink'], statEPIncrease, slotNum)
                 else -- SPELL_FAILED_ERROR
                     lineText = nil
                 end
 
-                tinsert(lines, lineText)
+                if lineText then tinsert(lines, lineText) end
             end
         else
-            if data['Ratio'] then
-                lineText = fmt("  %s: %s / +%s EP", data['ItemLink'] or _G.UNKNOWN, prettyPrintRatio(data['Ratio']),
+            if statsData['Ratio'] then
+                lineText = fmt("  %s: %s / +%s EP", statsData['ItemLink'] or _G.UNKNOWN, prettyPrintRatio(statsData['Ratio']),
                                statEPIncrease)
-            elseif data['ItemLink'] == _G.EMPTY then
-                lineText = fmt("  %s: +%s EP", data['ItemLink'], statEPIncrease)
+            elseif statsData['ItemLink'] == _G.EMPTY then
+                lineText = fmt("  %s: +%s EP", statsData['ItemLink'], statEPIncrease)
             else -- SPELL_FAILED_ERROR
                 lineText = nil
             end
@@ -524,7 +522,7 @@ local function TooltipSetItem(tooltip, ...)
             if lineText then tinsert(lines, lineText) end
         end
 
-        if data['debug'] and addon.settings.profile.debug then tinsert(lines, "    -" .. data['debug']) end
+        if statsData['debug'] and addon.settings.profile.debug then tinsert(lines, "    -" .. statsData['debug']) end
     end
 
     if addon.settings.profile.enableTotalEP then
@@ -846,7 +844,6 @@ local function CalculateDPSWeight(itemData, stats)
     --    ...
     -- }
 
-    -- TODO doesn't work on hidden/background tooltip parsing sometimes?
     if not stats or not stats['ITEM_MOD_CR_SPEED_SHORT'] then
         if addon.settings.profile.debug then
             addon.comms.PrettyPrint("itemUpgrades CalculateDPSWeight, Speed property required %s",
@@ -892,7 +889,7 @@ local function CalculateDPSWeight(itemData, stats)
         end
     end
 
-    print("CalculateDPSWeight, return dpsWeights")
+    print("CalculateDPSWeight, return dpsWeights", itemData['itemLink'])
     return dpsWeights
 end
 
@@ -1147,30 +1144,36 @@ local WEAPON_SLOT_ANALYSIS = {
     -- INVTYPE_WEAPON handled dynamically by GetWeaponSlotComparisonNames below
 }
 
-function addon.itemUpgrades:GetWeaponSlotComparisonNames()
+function addon.itemUpgrades:GetWeaponSlotComparisonNames(itemEquipLoc)
     local weaponSlotComparisons = {}
-
+    local slotIds
     local equippedItemLink, equippedItemData
 
-    for _, meleeSlotNum in ipairs({_G.INVSLOT_MAINHAND, _G.INVSLOT_OFFHAND}) do
-        equippedItemLink = GetInventoryItemLink("player", meleeSlotNum)
+    if IsMeleeSlot(itemEquipLoc) then
+        slotIds = {_G.INVSLOT_MAINHAND, _G.INVSLOT_OFFHAND}
+    else
+        slotIds = {_G.INVSLOT_RANGED}
+    end
+
+    for _, weaponSlotNum in ipairs(slotIds) do
+        equippedItemLink = GetInventoryItemLink("player", weaponSlotNum)
         equippedItemData = addon.itemUpgrades:GetItemData(equippedItemLink, nil)
 
         -- Exclude Shields and Held
-        if equippedItemData and IsMeleeSlot(equippedItemData.itemEquipLoc) then
-            -- print("meleeSlotNum", meleeSlotNum, equippedItemData.itemEquipLoc)
+        if equippedItemData and IsWeaponSlot(equippedItemData.itemEquipLoc) then
+            -- print("weaponSlotNum", weaponSlotNum, equippedItemData.itemEquipLoc)
 
-            if equippedItemData.itemEquipLoc == "INVTYPE_WEAPON" and meleeSlotNum == _G.INVSLOT_MAINHAND then
-                weaponSlotComparisons[meleeSlotNum] = WEAPON_SLOT_ANALYSIS["INVTYPE_WEAPONMAINHAND"]
-            elseif equippedItemData.itemEquipLoc == "INVTYPE_WEAPON" and meleeSlotNum == _G.INVSLOT_OFFHAND then
-                weaponSlotComparisons[meleeSlotNum] = WEAPON_SLOT_ANALYSIS["INVTYPE_WEAPONOFFHAND"]
+            if equippedItemData.itemEquipLoc == "INVTYPE_WEAPON" and weaponSlotNum == _G.INVSLOT_MAINHAND then
+                weaponSlotComparisons[weaponSlotNum] = WEAPON_SLOT_ANALYSIS["INVTYPE_WEAPONMAINHAND"]
+            elseif equippedItemData.itemEquipLoc == "INVTYPE_WEAPON" and weaponSlotNum == _G.INVSLOT_OFFHAND then
+                weaponSlotComparisons[weaponSlotNum] = WEAPON_SLOT_ANALYSIS["INVTYPE_WEAPONOFFHAND"]
+            elseif weaponSlotNum == _G.INVSLOT_RANGED then -- Treat all ranged name variants as the slot
+                weaponSlotComparisons[weaponSlotNum] = WEAPON_SLOT_ANALYSIS["INVTYPE_RANGED"]
             else
-                weaponSlotComparisons[meleeSlotNum] = WEAPON_SLOT_ANALYSIS[equippedItemData.itemEquipLoc]
+                weaponSlotComparisons[weaponSlotNum] = WEAPON_SLOT_ANALYSIS[equippedItemData.itemEquipLoc]
             end
         end
     end
-
-    weaponSlotComparisons[_G.INVSLOT_RANGED] = WEAPON_SLOT_ANALYSIS["INVTYPE_RANGED"]
 
     return weaponSlotComparisons
 end
@@ -1238,7 +1241,6 @@ end
 -- nil if same item
 -- % change otherwise
 function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
-    print("Stack2, CompareStatWeight")
     local comparedData = self:GetItemData(itemLink, tooltip)
 
     -- Failed to load (wait for next try) or not equippable
@@ -1266,8 +1268,8 @@ function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
     local slotNamesToCompare = {}
 
     if IsWeaponSlot(comparedData.itemEquipLoc) then
-        print("CompareStatWeight IsWeaponSlot", comparedData.itemEquipLoc)
-        slotNamesToCompare = addon.itemUpgrades:GetWeaponSlotComparisonNames()
+        print("Stack2.1, CompareStatWeight IsWeaponSlot", comparedData.itemEquipLoc)
+        slotNamesToCompare = addon.itemUpgrades:GetWeaponSlotComparisonNames(comparedData.itemEquipLoc)
     else
         slotNamesToCompare[comparedData.itemEquipLoc] = session.equippableSlots[comparedData.itemEquipLoc]
     end
@@ -1276,7 +1278,7 @@ function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
     -- Will be 1 for most and 1-2 for rings
     for itemEquipLoc, slotId in pairs(slotNamesToCompare) do
         -- TODO if slotId is table
-        print("CompareStatWeight pairs(slotNamesToCompare)", "itemEquipLoc", itemEquipLoc, "slotId", slotId)
+        print("Stack2.2, CompareStatWeight pairs(slotNamesToCompare)", "itemEquipLoc", itemEquipLoc, "slotId", slotId)
         equippedItemLink = GetInventoryItemLink("player", slotId or itemEquipLoc)
 
         -- No equipped item, so anything is an upgrade from no item
@@ -1308,8 +1310,6 @@ function addon.itemUpgrades:CompareStatWeight(itemLink, tooltip)
 
     end
 
-    -- Return statComparisons
-    -- print("return slotNamesToCompare")
     return statComparisons
 end
 
