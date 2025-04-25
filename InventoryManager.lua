@@ -168,12 +168,16 @@ local function SortQuiver()
 
 end
 
+local exceptions = {
+    [6196] = true,
+}
+
 local function IsJunk(id)
     if not id then return end
     local discard = RXPCData.discardPile[id]
     if discard == nil then
         local _, _, quality = GetItemInfo(id)
-        if quality == Enum.ItemQuality.Poor then
+        if quality == Enum.ItemQuality.Poor and not exceptions[id] then
             return true
             --TODO: add an option that ignores auto selling grays if item is an upgrade
         end
@@ -416,7 +420,7 @@ local function ShowJunkIcon(frame)
         table.insert(junkIcons,texture)
         texture:SetTexture("Interface/Buttons/UI-GroupLoot-Coin-Up")
         texture:SetSize(16,16)
-        texture:SetPoint("TOPLEFT", 1, -1)
+        texture:SetPoint(inventoryManager.alignment, 1, -1)
         frame.RXPJunkIcon = texture
     end
 
@@ -484,6 +488,7 @@ end
 inventoryManager.containerPattern = "%sItem%d"
 inventoryManager.containerName = "ContainerFrame%d"
 inventoryManager.containerIndex = -1
+inventoryManager.alignment = "TOPLEFT"
 
 local function DetectBagMods()
     if _G["BagnonContainerItem1"] then
@@ -505,6 +510,10 @@ local function DetectBagMods()
         inventoryManager.containerName = "ARKINV_Frame1ScrollContainerBag%d"
     elseif _G["BaudBagSubBag0"] then
         inventoryManager.containerName = "BaudBagSubBag%d"
+    elseif _G["Baganator"] then
+        inventoryManager.containerName = "BGRLiveItemButton%d"
+        inventoryManager.containerPattern = "%s"
+        inventoryManager.alignment = "TOPRIGHT"
     end
 end
 
