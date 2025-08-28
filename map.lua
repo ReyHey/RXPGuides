@@ -972,63 +972,48 @@ end
 local corpseWP = {title = "Corpse", generated = 1, wpHash = 0}
 -- Updates the arrow
 
-local function updateArrowData()
-    local lowPrioWPs
-    local loop = {}
-    if UnitIsGhost("player") then
-    print("|cff33ff99[SpiritHealerTest]|r updateArrowData ghost block running, isDeathSkip =", isDeathSkip)
-end
-
-
-    local function ProcessWaypoint(element, lowPrio, isComplete)
-        if element.hidden then
-            return
-        elseif element.lowPrio and not lowPrio then
-            table.insert(lowPrioWPs, element)
-            return
-        end
-        local step = element.step or {}
-        if step.loop then
-            loop[step] = true
-        end
-        local generated = element.generated or 0
-        if (bit.band(generated,0x1) == 0x1) or (element.arrow and element.step.active and
-            not (element.parent and
-                (element.parent.completed or element.parent.skip)) and
-            not (element.text and (element.completed or isComplete) and
-                not isComplete)) then
-            af:SetShown(not addon.settings.profile.disableArrow and not addon.hideArrow and addon.settings.profile.showEnabled)
-            af.dist = 0
-            af.orientation = 0
-            af.element = element
-
-            -- forceUpdate set if 1/X steps are completed, e.g. 6/7 + 7/7 Plainstriders
-            af.forceUpdate = true
+local function IsCurrentStepDeathskip()
+    for _, el in pairs(addon.activeWaypoints) do
+        if el.step and (el.step.deathskip or el.step.isDeathSkip) then
             return true
         end
     end
-    isDeathSkip = true
-    if UnitIsGhost("player") and  isDeathSkip == false and  --Meet at the grave and the follow-up quest:
-        not (addon.QuestAutoAccept(3912) or addon.QuestAutoAccept(3913)) then
-        local skip
-        for i,element in pairs(addon.activeWaypoints) do
-            skip = skip or (element.step and element.step.ignorecorpse) or (not element.textOnly and addon.currentGuide.name == "41-43 Badlands")
-        end
-        local zone = HBD:GetPlayerZone()
-        local corpse
-        if type(zone) == "number" then
-            corpse = C_DeathInfo.GetCorpseMapPosition(zone)
-        end
-        if not skip and corpse and corpse.x then
+    return false
+end
+
+
+local function updateArrowData()
+local lowPrioWPs = {} -- you use this with table.insert; must be initialized
+
+-- derive from the active guide step(s); DO NOT hard-set true
+-- local isDeathSkip = IsCurrentStepDeathskip()  -- make sure this helper exists (see below)
+local isDeathSkip = true
+-- 1) CORPSE pointer only when NOT a .deathskip step
+if UnitIsGhost("player") and (not isDeathSkip) and
+   not (addon.QuestAutoAccept(3912) or addon.QuestAutoAccept(3913)) then
+
+    local skip
+    for _, element in pairs(addon.activeWaypoints) do
+        skip = skip
+            or (element.step and element.step.ignorecorpse)
+            or (not element.textOnly and addon.currentGuide.name == "41-43 Badlands")
+    end
+
+    if not skip then
+        local HBD = LibStub("HereBeDragons-2.0")
+        local zone = HBD and HBD:GetPlayerZone()
+        local corpse = (type(zone) == "number") and C_DeathInfo.GetCorpseMapPosition(zone)
+        if corpse and corpse.x then
             corpseWP.wx, corpseWP.wy, corpseWP.instance =
-                             HBD:GetWorldCoordinatesFromZone(corpse.x,corpse.y,zone)
+                HBD:GetWorldCoordinatesFromZone(corpse.x, corpse.y, zone)
+            -- print("|cff33ff99[RXP]|r corpse pointer set") -- debug
             ProcessWaypoint(corpseWP)
             return
         end
     end
+end
 
-    -- Finding a Spiritual Healer, in development as of now.
--- Spirit Healer logic (during .deathskip while ghost)
+-- 2) SPIRIT HEALER pointer only when .deathskip step
 if UnitIsGhost("player") and isDeathSkip and
    not (addon.QuestAutoAccept(3912) or addon.QuestAutoAccept(3913)) then
 
@@ -1045,25 +1030,28 @@ if UnitIsGhost("player") and isDeathSkip and
     if px and instance and SpiritHealerWorld then
         local list = SpiritHealerWorld[instance]
         if list and #list > 0 then
-            local bestD, best
+            local best, bestD2
             for i = 1, #list do
                 local n = list[i]
                 local dx, dy = px - n.wx, py - n.wy
-                local d = dx*dx + dy*dy
-                if not bestD or d < bestD then
-                    bestD, best = d, n
-                end
+                local d2 = dx*dx + dy*dy
+                if not bestD2 or d2 < bestD2 then bestD2, best = d2, n end
             end
             if best then
                 corpseWP.wx, corpseWP.wy, corpseWP.instance = best.wx, best.wy, instance
+                -- corpseWP.title = best.name or "Spirit Healer" -- optional
+                -- print("|cff33ff99[RXP]|r healer pointer set:", best.name) -- debug
                 ProcessWaypoint(corpseWP)
                 return
             end
         end
     end
-    --error line.
-    print("|cffff0000[RestedXP]|r No Spirit Healer found for instance:", instance or "nil")
+
+    -- Only prints when we're in .deathskip and healer failed
+    print("|cffff0000[RestedXP]|r No Spirit Healer found for instance:",
+          (instance ~= nil) and instance or "nil")
 end
+
 
 
     end
