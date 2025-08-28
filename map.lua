@@ -975,7 +975,6 @@ local corpseWP = {title = "Corpse", generated = 1, wpHash = 0}
 local function updateArrowData()
     local lowPrioWPs
     local loop = {}
-    isDeathSkip = true
     if UnitIsGhost("player") then
     print("|cff33ff99[SpiritHealerTest]|r updateArrowData ghost block running, isDeathSkip =", isDeathSkip)
 end
@@ -1008,7 +1007,7 @@ end
             return true
         end
     end
-
+    isDeathSkip = true
     if UnitIsGhost("player") and  isDeathSkip == false and  --Meet at the grave and the follow-up quest:
         not (addon.QuestAutoAccept(3912) or addon.QuestAutoAccept(3913)) then
         local skip
