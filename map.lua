@@ -976,6 +976,10 @@ local function updateArrowData()
     local lowPrioWPs
     local loop = {}
     isDeathSkip = true
+    if UnitIsGhost("player") then
+    print("|cff33ff99[SpiritHealerTest]|r updateArrowData ghost block running, isDeathSkip =", isDeathSkip)
+end
+
 
     local function ProcessWaypoint(element, lowPrio, isComplete)
         if element.hidden then
