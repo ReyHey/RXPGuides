@@ -983,10 +983,8 @@ end
 
 
 local function updateArrowData()
-local lowPrioWPs = {} -- you use this with table.insert; must be initialized
-
--- derive from the active guide step(s); DO NOT hard-set true
--- local isDeathSkip = IsCurrentStepDeathskip()  -- make sure this helper exists (see below)
+local lowPrioWPs = {}
+-- local isDeathSkip = IsCurrentStepDeathskip() -- commented out for testing
 local isDeathSkip = true
 print("|cff33ff99[RXP]|r isDeathSkip =", isDeathSkip and "true" or "false")
 -- 1) CORPSE pointer only when NOT a .deathskip step
@@ -1040,8 +1038,7 @@ if UnitIsGhost("player") and isDeathSkip and
             end
             if best then
                 corpseWP.wx, corpseWP.wy, corpseWP.instance = best.wx, best.wy, instance
-                -- corpseWP.title = best.name or "Spirit Healer" -- optional
-                -- print("|cff33ff99[RXP]|r healer pointer set:", best.name) -- debug
+                print("|cff33ff99[RXP]|r healer pointer set:", best.name) -- debug
                 ProcessWaypoint(corpseWP)
                 return
             end
