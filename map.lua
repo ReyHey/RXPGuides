@@ -975,6 +975,7 @@ local corpseWP = {title = "Corpse", generated = 1, wpHash = 0}
 local function updateArrowData()
     local lowPrioWPs
     local loop = {}
+    isDeathSkip = true
 
     local function ProcessWaypoint(element, lowPrio, isComplete)
         if element.hidden then
@@ -1023,6 +1024,47 @@ local function updateArrowData()
         end
     end
 
+    -- Finding a Spiritual Healer, in development as of now.
+-- Spirit Healer logic (during .deathskip while ghost)
+if UnitIsGhost("player") and isDeathSkip and
+   not (addon.QuestAutoAccept(3912) or addon.QuestAutoAccept(3913)) then
+
+    local skip
+    for _, element in pairs(addon.activeWaypoints) do
+        skip = skip
+            or (element.step and element.step.ignorecorpse)
+            or (not element.textOnly and addon.currentGuide.name == "41-43 Badlands")
+    end
+    if skip then return end
+
+    local HBD = LibStub("HereBeDragons-2.0")
+    local px, py, instance = HBD and HBD:GetPlayerWorldPosition("player")
+    if px and instance and SpiritHealerWorld then
+        local list = SpiritHealerWorld[instance]
+        if list and #list > 0 then
+            local bestD, best
+            for i = 1, #list do
+                local n = list[i]
+                local dx, dy = px - n.wx, py - n.wy
+                local d = dx*dx + dy*dy
+                if not bestD or d < bestD then
+                    bestD, best = d, n
+                end
+            end
+            if best then
+                corpseWP.wx, corpseWP.wy, corpseWP.instance = best.wx, best.wy, instance
+                ProcessWaypoint(corpseWP)
+                return
+            end
+        end
+    end
+    --error line.
+    print("|cffff0000[RestedXP]|r No Spirit Healer found for instance:", instance or "nil")
+end
+
+
+    end
+
     local function SetArrowWP()
         lowPrioWPs = {}
         for i, element in ipairs(addon.activeWaypoints) do
@@ -1058,7 +1100,7 @@ local function updateArrowData()
         addon:ScheduleTask(addon.UpdateGotoSteps)
     end
     af:Hide()
-end
+
 
 function addon.ResetArrowPosition()
     addon.settings.profile.disableArrow = false

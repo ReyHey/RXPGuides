@@ -31,6 +31,9 @@ DB/wotlk.xml [AllowLoadGameType wrath]
 DB/tbc.xml [AllowLoadGameType tbc]
 DB/classic.xml [AllowLoadGameType vanilla]
 
+# Unsure where PointToSpiritHealer has to go
+SpiritHealerDB.lua
+
 HSBatching.lua
 QuestLog.lua
 ActiveItemFrame.lua
