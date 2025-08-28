@@ -988,6 +988,7 @@ local lowPrioWPs = {} -- you use this with table.insert; must be initialized
 -- derive from the active guide step(s); DO NOT hard-set true
 -- local isDeathSkip = IsCurrentStepDeathskip()  -- make sure this helper exists (see below)
 local isDeathSkip = true
+print("|cff33ff99[RXP]|r isDeathSkip =", isDeathSkip and "true" or "false")
 -- 1) CORPSE pointer only when NOT a .deathskip step
 if UnitIsGhost("player") and (not isDeathSkip) and
    not (addon.QuestAutoAccept(3912) or addon.QuestAutoAccept(3913)) then
