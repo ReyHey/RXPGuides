@@ -1005,7 +1005,7 @@ local function updateArrowData()
         end
     end
 
-    if UnitIsGhost("player") and --Meet at the grave and the follow-up quest:
+    if UnitIsGhost("player") and  isDeathSkip == false and  --Meet at the grave and the follow-up quest:
         not (addon.QuestAutoAccept(3912) or addon.QuestAutoAccept(3913)) then
         local skip
         for i,element in pairs(addon.activeWaypoints) do
