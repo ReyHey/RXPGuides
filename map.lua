@@ -968,8 +968,8 @@ local function addMiniMapPins(pins)
         end
     end
 end
-
 local corpseWP = {title = "Corpse", generated = 1, wpHash = 0}
+
 -- Updates the arrow
   local function IsDeathSkip()
     if not addon.SpiritHealerWorld then return false end
@@ -1054,6 +1054,7 @@ local function updateArrowData()
                         corpseWP.wx, corpseWP.wy, corpseWP.instance = bestWX, bestWY, inst
                         corpseWP.title = "Spirit Healer"
                         ProcessWaypoint(corpseWP)
+                        addon.UpdateMap()
                         return
                     end
                 end
@@ -1071,6 +1072,8 @@ local function updateArrowData()
                         corpseWP.wx, corpseWP.wy, corpseWP.instance = wx, wy, inst
                         corpseWP.title = "Corpse"
                         ProcessWaypoint(corpseWP)
+                        af.forceUpdate = true
+                        addon.UpdateMap()
                         return -- STOP: anchor on corpse
                     end
                 end
