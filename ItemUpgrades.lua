@@ -621,7 +621,6 @@ function addon.itemUpgrades:UpdateSlotMap()
     end
 end
 
-
 local hasCCont = C_Container and C_Container.GetContainerItemLink
 local function RXP_GetBagItemLink(bag, slot)
     if hasCCont then return C_Container.GetContainerItemLink(bag, slot) end
@@ -647,34 +646,7 @@ local function RXP_IsItemUpgrade(itemLink)
     return false
 end
 
--- Create or reuse upgrade icon texture on bag button
-local function RXP_GetOrCreateUpgradeIcon(btn)
-    if btn.RXPUpgradeIcon then return btn.RXPUpgradeIcon end
-    local t = btn:CreateTexture(nil, "OVERLAY")
-    t:SetTexture(RXP_UPGRADE_ICON)
-    t:SetSize(18, 18)
-    t:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", 1, 1)
-    t:Hide()
-    btn.RXPUpgradeIcon = t
-    return t
-end
-
--- Update one bag button
-local function RXP_UpdateBagButton(btn)
-    if not btn or not btn:GetParent() then return end
-    -- Respect main toggle the feature already uses
-    if not addon.settings.profile.enableItemUpgrades then
-        if btn.RXPUpgradeIcon then btn.RXPUpgradeIcon:Hide() end
-        return
-    end
-    local bag = btn:GetParent():GetID()
-    local slot = btn:GetID()
-    if not bag or not slot then return end
-    local link = RXP_GetBagItemLink(bag, slot)
-    local tex = RXP_GetOrCreateUpgradeIcon(btn)
-    if link and RXP_IsItemUpgrade(link) then tex:Show() else tex:Hide() end
-end
-
+local RXP_UpdateBagButton
 -- Refresh all visible bag buttons
 local function RXP_RefreshAllBagOverlays()
     for i = 1, (NUM_CONTAINER_FRAMES or 13) do
@@ -692,9 +664,8 @@ end
 
 
 function addon.itemUpgrades:Setup()
-    -- Toggle functionality off
-    if not addon.settings.profile.enableItemUpgrades or not addon.settings.profile.enableTips then return end
-
+     -- Only the feature toggle should gate overlays; tooltips are gated below
+    if not addon.settings.profile.enableItemUpgrades then return end
     if UnitLevel("player") == GetMaxPlayerLevel() then return end
 
     self:UpdateSlotMap()
@@ -702,9 +673,7 @@ function addon.itemUpgrades:Setup()
     if not self:ActivateSpecWeights() then return end
     session.itemCache = {}
 
-    -- Only register events and hookScript once
     if session.isInitialized then return end
-
     self:RegisterEvent("PLAYER_LEVEL_UP")
     self:RegisterEvent("TRAINER_SHOW")
 
@@ -723,33 +692,29 @@ function addon.itemUpgrades:Setup()
     -- Add out-of-band (aka hackery) stat parsing
     for key, regex in pairs(OUT_OF_BAND_KEYS) do session.statsRegexes[key] = regex end
 
-    -- Inventory
-    GameTooltip:HookScript("OnTooltipSetItem", TooltipSetItem)
+        -- Tooltip hooks only if tips are enabled
+    if addon.settings.profile.enableTips then
+        GameTooltip:HookScript("OnTooltipSetItem", TooltipSetItem)
+        ItemRefTooltip:HookScript("OnTooltipSetItem", TooltipSetItem)
+        ShoppingTooltip1:HookScript("OnTooltipSetItem", TooltipSetItem)
+    end
 
-    -- Vendor?
-    ItemRefTooltip:HookScript("OnTooltipSetItem", TooltipSetItem)
-
-    -- Enable AH
-    ShoppingTooltip1:HookScript("OnTooltipSetItem", TooltipSetItem)
     -- ShoppingTooltip2:HookScript("OnTooltipSetItem", TooltipSetItem)
         -- Bag overlays
     if not session.bagHooksDone then
-        -- update per-slot overlay whenever Blizzard refreshes a bag button
         if type(ContainerFrameItemButton_Update) == "function" then
             hooksecurefunc("ContainerFrameItemButton_Update", function(btn)
                 RXP_UpdateBagButton(btn)
             end)
         end
-
--- on frame reset resweep
-    if type(ContainerFrame_Update) == "function" then
-        hooksecurefunc("ContainerFrame_Update", function()
-                C_Timer.After(0, function()
-                    RXP_RefreshAllBagOverlays()
-                end)
+        if type(ContainerFrame_Update) == "function" then
+            hooksecurefunc("ContainerFrame_Update", function()
+                C_Timer.After(0, RXP_RefreshAllBagOverlays)
             end)
         end
+        session.bagHooksDone = true
     end
+
 
         -- Refresh when bags/equipment change
     self:RegisterEvent("BAG_UPDATE_DELAYED", function()
@@ -770,6 +735,41 @@ function addon.itemUpgrades:Setup()
         end)
     end)
 
+    local function RXP_TryHookIM()
+    local IM = _G.InventoryManager
+    if not IM then return false end
+
+    -- IM bridge
+    if IM.ShowJunkIcon and not session.imShowHooked then
+        hooksecurefunc(IM, "ShowJunkIcon", function(a, b, ...)
+            local btn = b or a
+            RXP_UpdateBagButton(btn, ...)
+        end)
+        session.imShowHooked = true
+    end
+
+    if IM.HideJunkIcon and not session.imHideHooked then
+        hooksecurefunc(IM, "HideJunkIcon", function(a, b, ...)
+            local btn = b or a
+            if btn and btn.RXPUpgradeIcon then btn.RXPUpgradeIcon:Hide() end
+        end)
+        session.imHideHooked = true
+    end
+
+
+    return session.imShowHooked or session.imHideHooked
+end
+
+-- Try now and also later (IM can load after us)
+if not RXP_TryHookIM() then
+    self:RegisterEvent("ADDON_LOADED", function()
+        RXP_TryHookIM()
+    end)
+    C_Timer.After(0.2, RXP_TryHookIM)
+    C_Timer.After(1.0, RXP_TryHookIM)
+end
+
+    C_Timer.After(0, RXP_RefreshAllBagOverlays)
     session.isInitialized = true
 
     self.AH:Setup()
@@ -1532,6 +1532,68 @@ local ahSession = {
 
 addon.itemUpgrades.AH = addon:NewModule("ItemUpgradesAH", "AceEvent-3.0")
 
+-- --- IM bridge helpers -------------------------------------------------------
+
+-- Robust (but short) way to get an item link from *any* bag button
+local function RXP_GetItemLinkFromButton(btn, ...)
+    -- If a link string was passed into the hook, use it
+    for i = 1, select("#", ...) do
+        local a = select(i, ...)
+        if type(a) == "string" and a:find("item:", 1, true) then return a end
+    end
+
+    -- Direct getters many bag addons (and IM) expose
+    if type(btn.GetItemLink) == "function" then
+        local ok, link = pcall(btn.GetItemLink, btn)
+        if ok and type(link) == "string" and link:find("item:", 1, true) then return link end
+    end
+    if type(btn.itemLink) == "string" and btn.itemLink:find("item:", 1, true) then
+        return btn.itemLink
+    end
+
+    -- ItemLocation path (Baganator/modern)
+    if type(btn.GetItemLocation) == "function" and C_Item and C_Item.GetItemLink and C_Item.DoesItemExist then
+        local okLoc, loc = pcall(btn.GetItemLocation, btn)
+        if okLoc and loc and C_Item.DoesItemExist(loc) then
+            local okLink, link = pcall(C_Item.GetItemLink, loc)
+            if okLink and type(link) == "string" and link:find("item:", 1, true) then return link end
+        end
+    end
+
+    -- Blizzard fallback: bag/slot from parents/IDs
+    if btn.GetParent and btn:GetParent() and btn:GetParent().GetID and btn.GetID then
+        local bag = btn:GetParent():GetID()
+        local slot = btn:GetID()
+        if bag and slot then return RXP_GetBagItemLink(bag, slot) end
+    end
+
+    return nil
+end
+
+-- Always-on-top upgrade badge (uses a high sublevel so it draws above other overlays)
+local function RXP_GetOrCreateUpgradeIcon(btn)
+    if btn.RXPUpgradeIcon then return btn.RXPUpgradeIcon end
+    local t = btn:CreateTexture(nil, "OVERLAY", nil, 7) -- sublevel 7 => above most overlays (junk/quest/etc.)
+    t:SetTexture(RXP_UPGRADE_ICON)
+    t:SetSize(18, 18)
+    t:SetPoint("BOTTOMLEFT", btn, "BOTTOMLEFT", 1, 1)
+    t:Hide()
+    btn.RXPUpgradeIcon = t
+    return t
+end
+
+-- One updater that shows/hides our icon for a given button
+RXP_UpdateBagButton = function(btn, ...)
+    if not addon.settings.profile.enableItemUpgrades then
+        if btn and btn.RXPUpgradeIcon then btn.RXPUpgradeIcon:Hide() end
+        return
+    end
+    if not btn then return end
+    local link = RXP_GetItemLinkFromButton(btn, ...)
+    local tex  = RXP_GetOrCreateUpgradeIcon(btn)
+    if link and RXP_IsItemUpgrade(link) then tex:Show() else tex:Hide() end
+end
+
 function addon.itemUpgrades.AH:Setup()
     if not addon.settings.profile.enableItemUpgradesAH or addon.game == "CATA" then return end
 
@@ -1542,6 +1604,7 @@ function addon.itemUpgrades.AH:Setup()
 
     self:RegisterEvent("GET_ITEM_INFO_RECEIVED")
     self:RegisterEvent("AUCTION_ITEM_LIST_UPDATE")
+    C_Timer.After(0, RXP_RefreshAllBagOverlays)
 
     ahSession.isInitialized = true
 end
@@ -1595,7 +1658,7 @@ function addon.itemUpgrades.AH:SearchForBuyoutItem(itemData)
 
     -- Pre-populates UI, so let user retry if server overloaded
     if CanSendAuctionQuery() then
-        session.sentQuery = true
+        ahSession.sentQuery = true
         _G.AuctionFrameBrowse_Search()
     end
 
