@@ -28,6 +28,7 @@ Timers.lua
 Communications.lua
 Targeting.lua
 InventoryManager.lua
+AutoStarterGuide_Retail.lua
 
 map.lua
 functions.lua
