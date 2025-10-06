@@ -499,6 +499,7 @@ local function UpdateBagButton(button,bag,slot)
     else
         HideJunkIcon(button)
     end
+    if _G.RXPItemUpgradesUpdate then _G.RXPItemUpgradesUpdate(button, bag, slot) end
 end
 
 local bagFrame = {}

@@ -1594,6 +1594,8 @@ RXP_UpdateBagButton = function(btn, ...)
     if link and RXP_IsItemUpgrade(link) then tex:Show() else tex:Hide() end
 end
 
+_G.RXPItemUpgradesUpdate = RXP_UpdateBagButton
+
 function addon.itemUpgrades.AH:Setup()
     if not addon.settings.profile.enableItemUpgradesAH or addon.game == "CATA" then return end
 
