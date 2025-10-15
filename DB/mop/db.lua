@@ -38,10 +38,28 @@ addon.defaultGuideList = {
 }
 ]]
 
-if faction == "Horde" then
-    addon.defaultGroup = "RXP Cataclysm 1-80 (H)"
+local minLevel = 1
+
+if addon.player.class == "DEATHKNIGHT" then
+    addon.defaultGroup = "RestedXP Death Knight Start"
+    minLevel = 55
+elseif faction == "Horde" then
+    addon.defaultGroup = "RXP MoP 1-60 (H)"
 elseif faction == "Alliance" then
-    addon.defaultGroup = "RXP Cataclysm 1-80 (A)"
+    addon.defaultGroup = "RXP MoP 1-60 (A)"
+end
+
+function addon.LoadDefaultGuide()
+    local login = addon.tracker.state.login
+    local played = difftime(time(),login.time) + login.totalTimePlayed
+    if played > 120 or UnitLevel('player') > minLevel then
+        return
+    end
+    local defaultGuide = addon.defaultGuide
+    if defaultGuide then
+        --print(defaultGuide)
+        addon:LoadGuideTable(addon.defaultGroup,defaultGuide)
+    end
 end
 
 addon.subzoneList = {}
@@ -482,6 +500,7 @@ end
 
 addon.professionID = {
     alchemy = {2259, 3101, 3464, 11611, 28596, 51304},
+    archaeology = {89718, 89720, 110393, 89719, 78670, 89722, 89721, 88961},
     blacksmithing = {2018, 3100, 3538, 9785, 29844, 51300},
     enchanting = {13920, 7411, 7412, 7413, 28029, 51313},
     engineering = {4036, 4037, 4038, 12656, 30350, 51306},
